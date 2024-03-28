@@ -1,0 +1,6 @@
+#
+# This file can be used to install dependencies
+#
+openshift
+openshift-client
+kubernetes
