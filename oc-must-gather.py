@@ -49,7 +49,8 @@ def get_csv_related_images_with_keyword(keyword):
         return []
 
 def main():
-    keyword = ["must-gather", "cluster-logging-operator"]
+    # keyword identificator for the must-gather operator bundle image
+    keyword = ["must-gather", "cluster-logging-operator", "must_gather_image"]
     must_gather = []
     
     for index in keyword:
