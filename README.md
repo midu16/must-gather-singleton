@@ -22,17 +22,21 @@ The script performs the following tasks:
 
 ## Operators 
 
-| Operator Name              | must-gather image source  |
+| Operator Name              | `must-gather` image source  |
 |----------------------------|---------------------------|
 | cluster-logging-operator   | In operator bundle        |
 | odf-operator               | In operator bundle        |
 | ocs-operator               | In operator bundle        |
 | lvms-operator              | In operator bundle        |
-| gitops-operator            | In operator bundle        |
-| sriov-operator             | [In cluster release bundle](https://github.com/openshift/must-gather) |
+| sriov-network-operator     | [In cluster release bundle](https://github.com/openshift/must-gather) |
 | ptp-operator               | 
+| file-integrity-operator    |
+| compliance-operator        |
+| quay-operator              |
+| aap-operator               |
+| kernel-module-management-hub |
+| kernel-module-management   |
 | OpenShift                  | [In cluster release bundle](https://github.com/openshift/must-gather) |
-| 
 
 [1] : https://docs.openshift.com/container-platform/4.14/support/gathering-cluster-data.html
 
