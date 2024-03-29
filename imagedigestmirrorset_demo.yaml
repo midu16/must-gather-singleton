@@ -1,0 +1,25 @@
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+    generation: 1
+    name: generic-0
+spec:
+    imageTagMirrors:
+        - mirrors:
+            - infra.5g-deployment.lab:8443/openshift-gitops-1
+          source: registry.redhat.io/openshift-gitops-1
+        - mirrors:
+            - infra.5g-deployment.lab:8443/openshift4
+          source: registry.redhat.io/openshift4
+        - mirrors:
+            - infra.5g-deployment.lab:8443/lvms4
+          source: registry.redhat.io/lvms4
+        - mirrors:
+            - infra.5g-deployment.lab:8443/openshift-logging
+          source: registry.redhat.io/openshift-logging
+        - mirrors:
+            - infra.5g-deployment.lab:8443/rhacm2
+          source: registry.redhat.io/rhacm2
+        - mirrors:
+            - infra.5g-deployment.lab:8443/multicluster-engine
+          source: registry.redhat.io/multicluster-engine
