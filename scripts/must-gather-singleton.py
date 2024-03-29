@@ -4,6 +4,7 @@ from kubernetes import client, config
 from openshift_client import Result
 import openshift_client as oc
 import os
+import argparse
 import tarfile
 import re
 from kubernetes.client.rest import ApiException
@@ -57,6 +58,29 @@ def get_csv_related_images_with_keyword(keyword):
     except Exception as e:
         print("Exception:", e)
         return []
+
+def get_cluster_name():
+    try:
+        # Load Kubernetes configuration
+        config.load_kube_config()
+
+        # Create an instance of the Kubernetes API client
+        kube_client = client.CoreV1Api()
+
+        # Get the cluster information
+        cluster_info = kube_client.list_node().items[0].metadata.labels
+
+        # Retrieve the cluster name from the labels
+        cluster_name = cluster_info.get('kubernetes.io/hostname', None)
+        
+        if cluster_name:
+            return cluster_name
+        else:
+            return "Cluster name not found."
+
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 
 def newest_file_in_current_path():
     """
@@ -169,6 +193,19 @@ def get_must_gather_url(operator_info):
 
     return url
 
+def validate_directory_path():
+    parser = argparse.ArgumentParser(description="Validate directory path.")
+    parser.add_argument("--path", type=str, help="Full directory path to validate", default='/apps/must-gather/')
+    args = parser.parse_args()
+
+    directory_path = args.path
+
+    if os.path.exists(directory_path):
+        print(f"The provided path '{directory_path}' is valid.")
+        return directory_path
+    else:
+        print(f"Error: The provided path '{directory_path}' does not exist.")
+        return None
 
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
@@ -179,20 +216,29 @@ def main():
 
         print(f"CSVs with related images containing keyword '{index}':")
         for csv in matching_csvs:
-            print(f"\nCSV Name: {csv['csv_name']}")
+            # print(f"\nCSV Name: {csv['csv_name']}")
             operator = operator_info(csv['csv_name'])
+            # Append a new entry
             operator['operator_major_version'] = operator['operator_version'].rsplit('.', 1)[0]
+            #print(operator)
+            #print(operator['operator_major_version'])
             mirror_must_gather.append(get_must_gather_url(operator))
             output_list = [ item for item in mirror_must_gather if item != '' ]
-            print(set(output_list))
+            #print(f"Namespace: {csv['csv_namespace']}")
+            #print("Related Images:")
             for image in csv['related_images']:
                 if index in image['name']:
+                    #print(f"   {image['name']}: {image['image']}")
                     bundle_must_gather.append(f"--image={image['image']}")
-    print(set(bundle_must_gather))
+    print(f'{set(output_list)}, {set(bundle_must_gather)}')
+    current_path = validate_directory_path()
+    # print(current_path)
+    cluster_name = get_cluster_name()
+    print(cluster_name)
     with oc.tls_verify(enable=False):
         oc.invoke('adm', ['must-gather', '--' ,'/usr/bin/gather && /usr/bin/gather_audit_logs', '--image-stream=openshift/must-gather', set(output_list), set(bundle_must_gather)])
     directory_path, filename = os.path.split(newest_file_in_current_path())
-    create_tar(f'{directory_path}/{filename}', f'{filename}.tar.gz')
+    create_tar(f'{directory_path}/{filename}', f'{current_path}/{filename}.tar.gz')
     
 if __name__ == "__main__":
     main()
