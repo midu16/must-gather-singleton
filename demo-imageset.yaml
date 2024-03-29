@@ -1,0 +1,15 @@
+apiVersion: mirror.openshift.io/v1alpha2
+archiveSize: 4
+kind: ImageSetConfiguration
+mirror:
+  additionalImages:
+   - name: registry.redhat.io/rhel9/support-tools:latest
+   - name: registry.redhat.io/openshift-gitops-1/must-gather-rhel8:v1.12.0
+   - name: registry.redhat.io/openshift-logging/cluster-logging-rhel9-operator:v5.8.5
+   - name: registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8:v4.14.0
+   - name: registry.redhat.io/lvms4/lvms-must-gather-rhel9:v4.14.0
+   - name: registry.redhat.io/openshift-gitops-1/must-gather-rhel8:v1.12.0
+   - name: registry.redhat.io/multicluster-engine/must-gather-rhel8:v2.4.3
+   - name: registry.redhat.io/multicluster-engine/must-gather-rhel8:v2.5.0
+   - name: registry.redhat.io/rhacm2/acm-must-gather-rhel8:v2.9.3
+   - name: registry.redhat.io/rhacm2/acm-must-gather-rhel9:v2.10.0
