@@ -112,7 +112,7 @@ def main():
     with oc.tls_verify(enable=False):
         oc.invoke('adm', ['must-gather', '--' ,'/usr/bin/gather && /usr/bin/gather_audit_logs', '--image-stream=openshift/must-gather', '--image=registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8', set(must_gather)])
     directory_path, filename = os.path.split(newest_file_in_current_path())
-    create_tar(directory_path, f'{filename}.tar.gz')
+    create_tar(f'{directory_path}/{filename}', f'{filename}.tar.gz')
     
 if __name__ == "__main__":
     main()
