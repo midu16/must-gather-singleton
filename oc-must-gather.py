@@ -5,6 +5,7 @@ from openshift_client import Result
 import openshift_client as oc
 import os
 import tarfile
+import re
 from kubernetes.client.rest import ApiException
 from openshift.dynamic import DynamicClient
 
@@ -88,29 +89,108 @@ def create_tar(directory_path, tarfile_name):
         print(f"Tar file '{tarfile_name}' created successfully.")
     except Exception as e:
         print(f"Error occurred while creating tar file: {e}")
-        
-def main():
-    keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather"]
-    must_gather = []
+
+def operator_info(input_string):
+    """
+    Parse the input string to extract operator name and version.
+
+    Parameters:
+        input_string (str): The input string containing operator name and version.
+
+    Returns:
+        dict: A dictionary containing operator name and version.
+    """
+    # Define regular expression pattern to match operator name and version
+    pattern = r'(?P<operator_name>[\w-]+)\.v(?P<operator_version>\d+\.\d+\.\d+)'
+
+    # Match the pattern in the input string
+    match = re.match(pattern, input_string)
+
+    if match:
+        # Extract operator name and version from the match object
+        operator_name = match.group('operator_name')
+        operator_version = match.group('operator_version')
+
+        # Construct and return a dictionary
+        return {'operator_name': operator_name, 'operator_version': operator_version}
+    else:
+        return None
+
+def get_must_gather_url(operator_info):
+    """
+    Get the registry URL based on the operator name and major version.
+
+    Parameters:
+        operator_info (dict): A dictionary containing operator name and major version.
+
+    Returns:
+        str: The registry URL corresponding to the operator name and major version and operator version as tag.
+    """
+    operator_mapping = {
+        'lvms-operator': {
+            '4.14': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9',
+            '4.15': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9',
+            '4.16': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9'
+        },
+        'ptp-operator': {
+            '4.14': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
+            '4.15': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
+            '4.16': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8'
+        },
+        'cluster-logging': {
+            '5.7': 'registry.redhat.io/openshift-logging/cluster-logging-rhel8-operator',
+            '5.8': 'registry.redhat.io/openshift-logging/cluster-logging-rhel9-operator'
+        },
+        'openshift-gitops-operator': {
+            '1.11': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8',
+            '1.12': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8'
+        },
+        'local-storage-operator': {
+            '4.14': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8',
+            '4.15': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel9',
+            '4.16': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel9'
+        },
+        'odf-operator': {
+            '4.14': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
+            '4.15': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
+            '4.16': 'registry.redhat.io/odf4/odf-must-gather-rhel9'
+        }
+        # Add more operators and versions as needed
+    }
+
+    operator_name = operator_info.get('operator_name', '')
+    operator_major_version = operator_info.get('operator_major_version', '')
+    operator_version = operator_info.get('operator_version', '')
     
+    url = operator_mapping.get(operator_name, {}).get(operator_major_version, '')
+
+    if url and operator_version:
+        url += f':v{operator_version}'
+
+    return url
+
+
+def main():
+    keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
+    bundle_must_gather = []
+    mirror_must_gather = []
     for index in keyword:
         matching_csvs = get_csv_related_images_with_keyword(index)
 
         print(f"CSVs with related images containing keyword '{index}':")
         for csv in matching_csvs:
-            # print(f"\nCSV Name: {csv['csv_name']}")
-            # print(f"Namespace: {csv['csv_namespace']}")
-            # print("Related Images:")
+            print(f"\nCSV Name: {csv['csv_name']}")
+            operator = operator_info(csv['csv_name'])
+            operator['operator_major_version'] = operator['operator_version'].rsplit('.', 1)[0]
+            mirror_must_gather.append(get_must_gather_url(operator))
+            output_list = [ item for item in mirror_must_gather if item != '' ]
+            print(set(output_list))
             for image in csv['related_images']:
                 if index in image['name']:
-                    # print(f"   {image['name']}: {image['image']}")
-                    must_gather.append(f"--image={image['image']}")
-                    # oc adm must-gather
-                    #with oc.tls_verify(enable=False):
-                    #    oc.invoke('adm', ['must-gather', '--image-stream=openshift/must-gather',f"--image={image['image']}"])
-    print(set(must_gather))
+                    bundle_must_gather.append(f"--image={image['image']}")
+    print(set(bundle_must_gather))
     with oc.tls_verify(enable=False):
-        oc.invoke('adm', ['must-gather', '--' ,'/usr/bin/gather && /usr/bin/gather_audit_logs', '--image-stream=openshift/must-gather', '--image=registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8', set(must_gather)])
+        oc.invoke('adm', ['must-gather', '--' ,'/usr/bin/gather && /usr/bin/gather_audit_logs', '--image-stream=openshift/must-gather', set(output_list), set(bundle_must_gather)])
     directory_path, filename = os.path.split(newest_file_in_current_path())
     create_tar(f'{directory_path}/{filename}', f'{filename}.tar.gz')
     
