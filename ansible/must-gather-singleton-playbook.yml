@@ -6,12 +6,12 @@
     # Define your containers with their unique properties
     containers:
       - name: must-gather-singleton-1
-        image: quay.io/midu/must-gather-singleton.x86_64:4.14
+        image: quay.io/midu/must-gather-singleton.x86_64@sha256:4671fa28d2a1726ccb17473a107e71958758e9fda6926a7bc16d85a7137dd02b
         volume_src: /apps/must-gather-singleton/spoke-1/
         container_dest: /apps/must-gather/
 
       - name: must-gather-singleton-2
-        image: quay.io/midu/must-gather-singleton.x86_64:4.14
+        image: quay.io/midu/must-gather-singleton.x86_64@sha256:4671fa28d2a1726ccb17473a107e71958758e9fda6926a7bc16d85a7137dd02b
         volume_src: /apps/must-gather-singleton/spoke-2/
         container_dest: /apps/must-gather/
 
