@@ -1,0 +1,36 @@
+---
+- name: Run Podman must-gather-singleton
+  hosts: localhost
+  become: yes
+  vars:
+    # Define your containers with their unique properties
+    containers:
+      - name: must-gather-singleton-1
+        image: quay.io/midu/must-gather-singleton.x86_64:4.14
+        volume_src: /apps/must-gather-singleton/spoke-1/
+        container_dest: /apps/must-gather/
+
+      - name: must-gather-singleton-2
+        image: quay.io/midu/must-gather-singleton.x86_64:4.14
+        volume_src: /apps/must-gather-singleton/spoke-2/
+        container_dest: /apps/must-gather/
+
+      # Add more container configurations as needed
+  tasks:
+    - name: Ensure podman is installed
+      package:
+        name: podman
+        state: present
+    - name: Start Podman must-gather-singleton container(s)
+      containers.podman.podman_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image }}"
+        state: started
+        volumes:
+          - "{{ item.volume_src }}:{{ item.container_dest }}"
+        env:
+          KUBECONFIG: "/apps/must-gather/kubeconfig"
+      loop: "{{ containers }}"
+      loop_control:
+        loop_var: item
+
