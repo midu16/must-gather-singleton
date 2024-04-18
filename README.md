@@ -2,14 +2,18 @@
 
 `must-gather-singleton` is a tool for collecting entire cluster stack data in a compact aggregated `must-gather` file.
 
-## Prerequisites
+## Container Prerequisites
 
-Ensure that you have the following prerequisites installed and configured:
+The Containerfile ensures the following prerequisites installed and configured:
 
 - Python 3.x
 - Kubernetes Python client (kubernetes package)
 - OpenShift Python client (openshift package)
 - Proper access to the Kubernetes or OpenShift cluster
+
+## Container Build Instructions
+
+> podman build .
 
 
 ## Functionality

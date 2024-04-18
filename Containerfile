@@ -8,17 +8,15 @@ ARG LICENSE="Apache-2.0"
 ARG URL="https://github.com/midu16/must-gather-singleton"
 ARG SOURCE="https://github.com/midu16/must-gather-singleton/Containerfile"
 
-RUN dnf update -y; dnf upgrade -y; dnf -y install python3; dnf clean all;
-RUN curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.14.10/openshift-client-linux-4.14.10.tar.gz | tar -xz -C /bin/
-
 COPY scripts/* /opt/
-RUN pip3 install -r /opt/requirements.txt
+
+RUN dnf update -y; dnf upgrade -y; dnf -y install python3; dnf clean all; pip3 install -r /opt/requirements.txt ; mkdir -p /apps/must-gather ;
+RUN curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.14.10/openshift-client-linux-4.14.10.tar.gz | tar -xz -C /bin/
 
 # Set environment variable
 ENV KUBECONFIG=/apps/kubeconfig
 
 # Create a directory in the container
-RUN mkdir -p /apps/must-gather
 
 # Mount volume from operating system to /apps/must-gather directory inside the container
 VOLUME /apps/must-gather
