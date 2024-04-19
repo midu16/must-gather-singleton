@@ -2,6 +2,9 @@
 
 `must-gather-singleton` is a tool for collecting entire cluster stack data in a compact aggregated `must-gather` file.
 
+> [!CAUTION]
+> Unless specified otherwise, everything contained in this repository is unsupported by Red Hat.
+
 ## Container Prerequisites
 
 The Containerfile ensures the following prerequisites installed and configured:
