@@ -196,6 +196,12 @@ def get_must_gather_url(operator_info):
     return url
 
 def validate_directory_path():
+    """
+    Validating that the provided directory path exists.
+
+    Returns:
+        str: The message of path validation provided.
+    """
     parser = argparse.ArgumentParser(description="Validate directory path.")
     parser.add_argument("--path", type=str, help="Full directory path to validate", default='/apps/must-gather/')
     args = parser.parse_args()
