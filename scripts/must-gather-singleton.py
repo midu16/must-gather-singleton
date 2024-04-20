@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 
 from kubernetes import client, config
-from openshift_client import Result
 import openshift_client as oc
 import os
 import argparse
 import tarfile
 import re
-from kubernetes.client.rest import ApiException
-from openshift.dynamic import DynamicClient
+
 
 def get_csv_related_images_with_keyword(keyword):
     """
-    Return a dictionary called matching_csvs mapping the csv.metadata.namespace:csv.metadata.name:csv.spec.relatedImages.image 
+    Return a dictionary called matching_csvs mapping the
+    csv.metadata.namespace:csv.metadata.name:csv.spec.relatedImages.image
     for further usage. 
 
     Parameters:
@@ -58,6 +57,7 @@ def get_csv_related_images_with_keyword(keyword):
     except Exception as e:
         print("Exception:", e)
         return []
+
 
 def get_cluster_name():
     try:
@@ -114,6 +114,7 @@ def create_tar(directory_path, tarfile_name):
     except Exception as e:
         print(f"Error occurred while creating tar file: {e}")
 
+
 def operator_info(input_string):
     """
     Parse the input string to extract operator name and version.
@@ -139,6 +140,7 @@ def operator_info(input_string):
         return {'operator_name': operator_name, 'operator_version': operator_version}
     else:
         return None
+
 
 def get_must_gather_url(operator_info):
     """
@@ -195,6 +197,7 @@ def get_must_gather_url(operator_info):
 
     return url
 
+
 def validate_directory_path():
     """
     Validating that the provided directory path exists.
@@ -215,6 +218,34 @@ def validate_directory_path():
         print(f"Error: The provided path '{directory_path}' does not exist.")
         return None
 
+
+def invoke_must_gather(output_list, bundle_must_gather):
+    """
+    Invoking the must-gather command to OCP.
+
+    Parameters:
+        output_list (list): A list containing all the must-gather images provided
+        as a pre-requisite in the OfflineRegistry or by quay.io.
+        bundle_must_gather (list): A list containing all the must-gather images of the installed operators if available.
+
+    Returns:
+        str: The cluster must-gather collection.
+    """
+    if not output_list and not bundle_must_gather:
+        # If both output_list and bundle_must_gather are empty, invoke with default parameters.
+        # This ensures that all the available means of collections are performed.
+        oc.invoke('adm', ['must-gather', '--',
+                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                          '--image-stream=openshift/must-gather'])
+    else:
+        # Otherwise, invoke with specified output_list and bundle_must_gather
+        oc.invoke('adm', ['must-gather', '--',
+                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                          '--image-stream=openshift/must-gather',
+                          set(output_list),
+                          set(bundle_must_gather)])
+
+
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
     bundle_must_gather = []
@@ -228,15 +259,15 @@ def main():
             operator = operator_info(csv['csv_name'])
             # Append a new entry
             operator['operator_major_version'] = operator['operator_version'].rsplit('.', 1)[0]
-            #print(operator)
-            #print(operator['operator_major_version'])
+            # print(operator)
+            # print(operator['operator_major_version'])
             mirror_must_gather.append(get_must_gather_url(operator))
-            output_list = [ item for item in mirror_must_gather if item != '' ]
-            #print(f"Namespace: {csv['csv_namespace']}")
-            #print("Related Images:")
+            output_list = [item for item in mirror_must_gather if item != '']
+            # print(f"Namespace: {csv['csv_namespace']}")
+            # print("Related Images:")
             for image in csv['related_images']:
                 if index in image['name']:
-                    #print(f"   {image['name']}: {image['image']}")
+                    # print(f"   {image['name']}: {image['image']}")
                     bundle_must_gather.append(f"--image={image['image']}")
     print(f'{set(output_list)}, {set(bundle_must_gather)}')
     current_path = validate_directory_path()
@@ -244,9 +275,11 @@ def main():
     cluster_name = get_cluster_name()
     print(cluster_name)
     with oc.tls_verify(enable=False):
-        oc.invoke('adm', ['must-gather', '--' ,'/usr/bin/gather && /usr/bin/gather_audit_logs', '--image-stream=openshift/must-gather', set(output_list), set(bundle_must_gather)])
+        invoke_must_gather(output_list, bundle_must_gather)
     directory_path, filename = os.path.split(newest_file_in_current_path())
     create_tar(f'{directory_path}/{filename}', f'{current_path}/{filename}.tar.gz')
     
+
 if __name__ == "__main__":
     main()
+    
