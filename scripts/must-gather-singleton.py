@@ -248,8 +248,11 @@ def invoke_must_gather(output_list, bundle_must_gather):
 
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
+    # Initialize the
+    # output_list, mirror_must_gather and bundle_must_gather variables outside of loop
     bundle_must_gather = []
     mirror_must_gather = []
+    output_list = []
     for index in keyword:
         matching_csvs = get_csv_related_images_with_keyword(index)
 
@@ -282,4 +285,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

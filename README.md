@@ -16,8 +16,8 @@ The Containerfile ensures the following prerequisites installed and configured:
 
 ## Container Build Instructions
 
+> [!NOTE]  
 > podman build .
-
 
 ## Functionality
 The script performs the following tasks:
