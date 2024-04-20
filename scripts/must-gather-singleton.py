@@ -152,6 +152,8 @@ def get_must_gather_url(operator_info):
     """
     operator_mapping = {
         'lvms-operator': {
+            '4.12': 'registry.redhat.io/lvms4/lvms-must-gather-rhel8',
+            '4.13': 'registry.redhat.io/lvms4/lvms-must-gather-rhel8',
             '4.14': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9',
             '4.15': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9',
             '4.16': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9'
