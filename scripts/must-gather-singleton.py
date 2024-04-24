@@ -3,9 +3,27 @@
 from kubernetes import client, config
 import openshift_client as oc
 import os
+import sys
 import argparse
 import tarfile
 import re
+
+def checkKubeConfig():
+    """
+    Gets the value of KUBECONFIG from the environment and test
+    to see if the file is accessible
+    Retruns True if found
+
+    Parameters:
+        none
+    """
+    retval = False
+
+    if os.path.isfile( os.environ["KUBECONFIG"]):
+      #print("Kubeconfig is a file")
+      retval = True
+
+    return retval
 
 
 def get_csv_related_images_with_keyword(keyword):
@@ -253,8 +271,17 @@ def main():
     bundle_must_gather = []
     mirror_must_gather = []
     output_list = []
+
+    if not checkKubeConfig():
+      print("Kubeconfig not found")
+      sys.exit(-1)
+
     for index in keyword:
         matching_csvs = get_csv_related_images_with_keyword(index)
+
+        if len(matching_csvs) == 0:
+            print("No CSVs were found with a matching must gather image keyword %s" %(index))
+            continue
 
         print(f"CSVs with related images containing keyword '{index}':")
         for csv in matching_csvs:
@@ -272,6 +299,9 @@ def main():
                 if index in image['name']:
                     # print(f"   {image['name']}: {image['image']}")
                     bundle_must_gather.append(f"--image={image['image']}")
+    if len(output_list) == 0 or len(bundle_must_gather) == 0:
+        print("No values found in one of the must gather lists")
+        sys.exit(-1)
     print(f'{set(output_list)}, {set(bundle_must_gather)}')
     current_path = validate_directory_path()
     # print(current_path)
