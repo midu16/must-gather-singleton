@@ -1,5 +1,5 @@
 # Use a base image
-FROM registry.access.redhat.com/ubi8
+FROM registry.access.redhat.com/ubi8-minimal
 
 ARG TITLE="must-gather-singleton"
 ARG DESCRIPTION="Collecting entire cluster stack data in a compact aggregated must-gather file"
@@ -10,8 +10,8 @@ ARG SOURCE="https://github.com/midu16/must-gather-singleton/Containerfile"
 
 COPY scripts/* /opt/
 
-RUN dnf update -y; dnf upgrade -y; dnf -y install python3; dnf clean all; pip3 install -r /opt/requirements.txt ; mkdir -p /apps/must-gather ;
-RUN curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.14.10/openshift-client-linux-4.14.10.tar.gz | tar -xz -C /bin/
+#RUN microdnf update -y; microdnf upgrade -y; 
+RUN microdnf -y install python3 tar gzip; microdnf clean all; pip3 install -r /opt/requirements.txt ; mkdir -p /apps/must-gather ; curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.14.10/openshift-client-linux-4.14.10.tar.gz | tar -xz -C /bin/
 
 # Set environment variable
 ENV KUBECONFIG=/apps/kubeconfig
