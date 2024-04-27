@@ -78,6 +78,9 @@ def get_csv_related_images_with_keyword(keyword):
 
 
 def get_cluster_name():
+    cluster_name = ""
+    retval = True
+
     try:
         # Load Kubernetes configuration
         config.load_kube_config()
@@ -91,13 +94,14 @@ def get_cluster_name():
         # Retrieve the cluster name from the labels
         cluster_name = cluster_info.get('kubernetes.io/hostname', None)
         
-        if cluster_name:
-            return cluster_name
-        else:
-            return "Cluster name not found."
+        if not cluster_name:
+            retval = False
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        cluster_name = "Error: " + str(e)
+        retval = False
+
+    return retval, cluster_name
 
 
 def newest_file_in_current_path():
@@ -276,6 +280,17 @@ def main():
       print("Kubeconfig not found")
       sys.exit(-1)
 
+    current_path = validate_directory_path()
+    if current_path == None:
+        print("Output directory path not found.")
+        sys.exit(-1)
+
+    retval, cluster_name = get_cluster_name()
+    if not retval:
+        print("Could not find cluster name: %s" %(cluster_name))
+        sys.exit(-1)
+    print("Cluster name: %s" % (cluster_name))
+
     for index in keyword:
         matching_csvs = get_csv_related_images_with_keyword(index)
 
@@ -299,17 +314,16 @@ def main():
                 if index in image['name']:
                     # print(f"   {image['name']}: {image['image']}")
                     bundle_must_gather.append(f"--image={image['image']}")
+
     if len(output_list) == 0 or len(bundle_must_gather) == 0:
         print("No values found in one of the must gather lists")
         sys.exit(-1)
+
     print(f'{set(output_list)}, {set(bundle_must_gather)}')
-    current_path = validate_directory_path()
-    # print(current_path)
-    cluster_name = get_cluster_name()
-    print(cluster_name)
     with oc.tls_verify(enable=False):
         invoke_must_gather(output_list, bundle_must_gather)
     directory_path, filename = os.path.split(newest_file_in_current_path())
+
     create_tar(f'{directory_path}/{filename}', f'{current_path}/{filename}.tar.gz')
     
 
