@@ -183,24 +183,34 @@ def get_must_gather_url(operator_info):
             '4.16': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9'
         },
         'ptp-operator': {
+            '4.12': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
+            '4.13': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
             '4.14': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
             '4.15': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
             '4.16': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8'
         },
         'cluster-logging': {
+            '5.5': 'registry.redhat.io/openshift-logging/cluster-logging-rhel8-operator',
+            '5.6': 'registry.redhat.io/openshift-logging/cluster-logging-rhel8-operator',
             '5.7': 'registry.redhat.io/openshift-logging/cluster-logging-rhel8-operator',
             '5.8': 'registry.redhat.io/openshift-logging/cluster-logging-rhel9-operator'
         },
         'openshift-gitops-operator': {
+            '1.9': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8',
+            '1.10': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8',
             '1.11': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8',
             '1.12': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8'
         },
         'local-storage-operator': {
+            '4.12': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8',
+            '4.13': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8',
             '4.14': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8',
             '4.15': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel9',
             '4.16': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel9'
         },
         'odf-operator': {
+            '4.12': 'registry.redhat.io/odf4/ocs-must-gather-rhel8',
+            '4.13': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
             '4.14': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
             '4.15': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
             '4.16': 'registry.redhat.io/odf4/odf-must-gather-rhel9'
