@@ -290,8 +290,8 @@ def main():
       print("Kubeconfig not found")
       sys.exit(-1)
 
-    current_path = validate_directory_path()
-    if current_path == None:
+    output_path = validate_directory_path()
+    if output_path == None:
         print("Output directory path not found.")
         sys.exit(-1)
 
@@ -334,7 +334,7 @@ def main():
         invoke_must_gather(output_list, bundle_must_gather)
     directory_path, filename = os.path.split(newest_file_in_current_path())
 
-    create_tar(f'{directory_path}/{filename}', f'{current_path}/{filename}.tar.gz')
+    create_tar(f'{directory_path}/{filename}', f'{output_path}/{filename}.tar.gz')
     
 
 if __name__ == "__main__":
