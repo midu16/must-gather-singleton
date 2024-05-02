@@ -264,12 +264,14 @@ def invoke_must_gather(output_list, bundle_must_gather):
         str: The cluster must-gather collection.
     """
     if not output_list and not bundle_must_gather:
+        print("Using the OCP default must gather")
         # If both output_list and bundle_must_gather are empty, invoke with default parameters.
         # This ensures that all the available means of collections are performed.
         oc.invoke('adm', ['must-gather', '--',
                           '/usr/bin/gather && /usr/bin/gather_audit_logs',
                           '--image-stream=openshift/must-gather'])
     else:
+        print("Calling found must gather")
         # Otherwise, invoke with specified output_list and bundle_must_gather
         oc.invoke('adm', ['must-gather', '--',
                           '/usr/bin/gather && /usr/bin/gather_audit_logs',
@@ -325,11 +327,9 @@ def main():
                     # print(f"   {image['name']}: {image['image']}")
                     bundle_must_gather.append(f"--image={image['image']}")
 
-    if len(output_list) == 0 or len(bundle_must_gather) == 0:
-        print("No values found in one of the must gather lists")
-        sys.exit(-1)
-
-    print(f'{set(output_list)}, {set(bundle_must_gather)}')
+    if len(output_list) or len(bundle_must_gather):
+        print("Image list:", " ".join(set(output_list)), " ".join(set(bundle_must_gather)))
+    
     with oc.tls_verify(enable=False):
         invoke_must_gather(output_list, bundle_must_gather)
     directory_path, filename = os.path.split(newest_file_in_current_path())
