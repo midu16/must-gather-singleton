@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from kubernetes import client, config
 import openshift_client as oc
@@ -10,20 +10,41 @@ import re
 
 def checkKubeConfig():
     """
-    Gets the value of KUBECONFIG from the environment and test
-    to see if the file is accessible
+    Checks to see if the kubeconfig file is available.
+    The KUBECONFIG environment variable is checked then
+    ~/.kube/confg
+    KUBECONFIG overrides the default path
     Retruns True if found
+
+    From the kubectl docs:
+    By default, kubectl looks for a file named config in the
+    $HOME/.kube directory. You can specify other kubeconfig files
+    by setting the KUBECONFIG environment variable or by setting
+    the --kubeconfig flag.
 
     Parameters:
         none
     """
     retval = False
+    config_file = ""
 
-    if os.path.isfile( os.environ["KUBECONFIG"]):
-      #print("Kubeconfig is a file")
-      retval = True
+    try:
+        if os.path.isfile( os.environ["KUBECONFIG"]):
+          print("Kubeconfig is a file")
+          config_file = os.environ["KUBECONFIG"]
+          retval = True
+        #this parameter pointing at an invalide file wins over a valid default file
+        elif os.environ["KUBECONFIG"]:
+          print("KUBECONFIG defined but not pointing a file")
+          retval = False
+    except KeyError:
+        print("KUBECONFIG key not found")
+        if os.path.isfile("/root/.kube/config"):
+          print("Default file found")
+          config_file = "/root/.kube/config"
+          retval = True
 
-    return retval
+    return retval, config_file
 
 
 def get_csv_related_images_with_keyword(keyword):
@@ -77,13 +98,13 @@ def get_csv_related_images_with_keyword(keyword):
         return []
 
 
-def get_cluster_name():
+def get_cluster_name(config_file = ""):
     cluster_name = ""
     retval = True
 
     try:
         # Load Kubernetes configuration
-        config.load_kube_config()
+        config.load_kube_config(config_file=config_file)
 
         # Create an instance of the Kubernetes API client
         kube_client = client.CoreV1Api()
@@ -102,7 +123,6 @@ def get_cluster_name():
         retval = False
 
     return retval, cluster_name
-
 
 def newest_file_in_current_path():
     """
@@ -136,7 +156,6 @@ def create_tar(directory_path, tarfile_name):
     except Exception as e:
         print(f"Error occurred while creating tar file: {e}")
 
-
 def operator_info(input_string):
     """
     Parse the input string to extract operator name and version.
@@ -162,7 +181,6 @@ def operator_info(input_string):
         return {'operator_name': operator_name, 'operator_version': operator_version}
     else:
         return None
-
 
 def get_must_gather_url(operator_info):
     """
@@ -229,7 +247,6 @@ def get_must_gather_url(operator_info):
 
     return url
 
-
 def validate_directory_path():
     """
     Validating that the provided directory path exists.
@@ -249,7 +266,6 @@ def validate_directory_path():
     else:
         print(f"Error: The provided path '{directory_path}' does not exist.")
         return None
-
 
 def invoke_must_gather(output_list, bundle_must_gather):
     """
@@ -279,7 +295,6 @@ def invoke_must_gather(output_list, bundle_must_gather):
                           set(output_list),
                           set(bundle_must_gather)])
 
-
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
     # Initialize the
@@ -288,7 +303,8 @@ def main():
     mirror_must_gather = []
     output_list = []
 
-    if not checkKubeConfig():
+    retval, config_file = checkKubeConfig()
+    if not retval:
       print("Kubeconfig not found")
       sys.exit(-1)
 
@@ -297,7 +313,7 @@ def main():
         print("Output directory path not found.")
         sys.exit(-1)
 
-    retval, cluster_name = get_cluster_name()
+    retval, cluster_name = get_cluster_name(config_file = config_file)
     if not retval:
         print("Could not find cluster name: %s" %(cluster_name))
         sys.exit(-1)
