@@ -1,18 +1,56 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from kubernetes import client, config
-from openshift_client import Result
 import openshift_client as oc
 import os
+import sys
 import argparse
 import tarfile
 import re
-from kubernetes.client.rest import ApiException
-from openshift.dynamic import DynamicClient
+
+def checkKubeConfig():
+    """
+    Checks to see if the kubeconfig file is available.
+    The KUBECONFIG environment variable is checked then
+    ~/.kube/confg
+    KUBECONFIG overrides the default path
+    Retruns True if found
+
+    From the kubectl docs:
+    By default, kubectl looks for a file named config in the
+    $HOME/.kube directory. You can specify other kubeconfig files
+    by setting the KUBECONFIG environment variable or by setting
+    the --kubeconfig flag.
+
+    Parameters:
+        none
+    """
+    retval = False
+    config_file = ""
+
+    try:
+        if os.path.isfile( os.environ["KUBECONFIG"]):
+          print("Kubeconfig is a file")
+          config_file = os.environ["KUBECONFIG"]
+          retval = True
+        #this parameter pointing at an invalide file wins over a valid default file
+        elif os.environ["KUBECONFIG"]:
+          print("KUBECONFIG defined but not pointing a file")
+          retval = False
+    except KeyError:
+        print("KUBECONFIG key not found")
+        if os.path.isfile("/root/.kube/config"):
+          print("Default file found")
+          config_file = "/root/.kube/config"
+          retval = True
+
+    return retval, config_file
+
 
 def get_csv_related_images_with_keyword(keyword):
     """
-    Return a dictionary called matching_csvs mapping the csv.metadata.namespace:csv.metadata.name:csv.spec.relatedImages.image 
+    Return a dictionary called matching_csvs mapping the
+    csv.metadata.namespace:csv.metadata.name:csv.spec.relatedImages.image
     for further usage. 
 
     Parameters:
@@ -59,10 +97,14 @@ def get_csv_related_images_with_keyword(keyword):
         print("Exception:", e)
         return []
 
-def get_cluster_name():
+
+def get_cluster_name(config_file = ""):
+    cluster_name = ""
+    retval = True
+
     try:
         # Load Kubernetes configuration
-        config.load_kube_config()
+        config.load_kube_config(config_file=config_file)
 
         # Create an instance of the Kubernetes API client
         kube_client = client.CoreV1Api()
@@ -73,14 +115,14 @@ def get_cluster_name():
         # Retrieve the cluster name from the labels
         cluster_name = cluster_info.get('kubernetes.io/hostname', None)
         
-        if cluster_name:
-            return cluster_name
-        else:
-            return "Cluster name not found."
+        if not cluster_name:
+            retval = False
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        cluster_name = "Error: " + str(e)
+        retval = False
 
+    return retval, cluster_name
 
 def newest_file_in_current_path():
     """
@@ -159,24 +201,34 @@ def get_must_gather_url(operator_info):
             '4.16': 'registry.redhat.io/lvms4/lvms-must-gather-rhel9'
         },
         'ptp-operator': {
+            '4.12': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
+            '4.13': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
             '4.14': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
             '4.15': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8',
             '4.16': 'registry.redhat.io/openshift4/ptp-must-gather-rhel8'
         },
         'cluster-logging': {
+            '5.5': 'registry.redhat.io/openshift-logging/cluster-logging-rhel8-operator',
+            '5.6': 'registry.redhat.io/openshift-logging/cluster-logging-rhel8-operator',
             '5.7': 'registry.redhat.io/openshift-logging/cluster-logging-rhel8-operator',
             '5.8': 'registry.redhat.io/openshift-logging/cluster-logging-rhel9-operator'
         },
         'openshift-gitops-operator': {
+            '1.9': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8',
+            '1.10': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8',
             '1.11': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8',
             '1.12': 'registry.redhat.io/openshift-gitops-1/must-gather-rhel8'
         },
         'local-storage-operator': {
+            '4.12': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8',
+            '4.13': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8',
             '4.14': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8',
             '4.15': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel9',
             '4.16': 'registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel9'
         },
         'odf-operator': {
+            '4.12': 'registry.redhat.io/odf4/ocs-must-gather-rhel8',
+            '4.13': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
             '4.14': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
             '4.15': 'registry.redhat.io/odf4/odf-must-gather-rhel9',
             '4.16': 'registry.redhat.io/odf4/odf-must-gather-rhel9'
@@ -196,6 +248,12 @@ def get_must_gather_url(operator_info):
     return url
 
 def validate_directory_path():
+    """
+    Validating that the provided directory path exists.
+
+    Returns:
+        str: The message of path validation provided.
+    """
     parser = argparse.ArgumentParser(description="Validate directory path.")
     parser.add_argument("--path", type=str, help="Full directory path to validate", default='/apps/must-gather/')
     args = parser.parse_args()
@@ -209,12 +267,64 @@ def validate_directory_path():
         print(f"Error: The provided path '{directory_path}' does not exist.")
         return None
 
+def invoke_must_gather(output_list, bundle_must_gather):
+    """
+    Invoking the must-gather command to OCP.
+
+    Parameters:
+        output_list (list): A list containing all the must-gather images provided
+        as a pre-requisite in the OfflineRegistry or by quay.io.
+        bundle_must_gather (list): A list containing all the must-gather images of the installed operators if available.
+
+    Returns:
+        str: The cluster must-gather collection.
+    """
+    if not output_list and not bundle_must_gather:
+        print("Using the OCP default must gather")
+        # If both output_list and bundle_must_gather are empty, invoke with default parameters.
+        # This ensures that all the available means of collections are performed.
+        oc.invoke('adm', ['must-gather', '--',
+                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                          '--image-stream=openshift/must-gather'])
+    else:
+        print("Calling found must gather")
+        # Otherwise, invoke with specified output_list and bundle_must_gather
+        oc.invoke('adm', ['must-gather', '--',
+                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                          '--image-stream=openshift/must-gather',
+                          set(output_list),
+                          set(bundle_must_gather)])
+
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
+    # Initialize the
+    # output_list, mirror_must_gather and bundle_must_gather variables outside of loop
     bundle_must_gather = []
     mirror_must_gather = []
+    output_list = []
+
+    retval, config_file = checkKubeConfig()
+    if not retval:
+      print("Kubeconfig not found")
+      sys.exit(-1)
+
+    output_path = validate_directory_path()
+    if output_path == None:
+        print("Output directory path not found.")
+        sys.exit(-1)
+
+    retval, cluster_name = get_cluster_name(config_file = config_file)
+    if not retval:
+        print("Could not find cluster name: %s" %(cluster_name))
+        sys.exit(-1)
+    print("Cluster name: %s" % (cluster_name))
+
     for index in keyword:
         matching_csvs = get_csv_related_images_with_keyword(index)
+
+        if len(matching_csvs) == 0:
+            print("No CSVs were found with a matching must gather image keyword %s" %(index))
+            continue
 
         print(f"CSVs with related images containing keyword '{index}':")
         for csv in matching_csvs:
@@ -222,25 +332,26 @@ def main():
             operator = operator_info(csv['csv_name'])
             # Append a new entry
             operator['operator_major_version'] = operator['operator_version'].rsplit('.', 1)[0]
-            #print(operator)
-            #print(operator['operator_major_version'])
+            # print(operator)
+            # print(operator['operator_major_version'])
             mirror_must_gather.append(get_must_gather_url(operator))
-            output_list = [ item for item in mirror_must_gather if item != '' ]
-            #print(f"Namespace: {csv['csv_namespace']}")
-            #print("Related Images:")
+            output_list = [item for item in mirror_must_gather if item != '']
+            # print(f"Namespace: {csv['csv_namespace']}")
+            # print("Related Images:")
             for image in csv['related_images']:
                 if index in image['name']:
-                    #print(f"   {image['name']}: {image['image']}")
+                    # print(f"   {image['name']}: {image['image']}")
                     bundle_must_gather.append(f"--image={image['image']}")
-    print(f'{set(output_list)}, {set(bundle_must_gather)}')
-    current_path = validate_directory_path()
-    # print(current_path)
-    cluster_name = get_cluster_name()
-    print(cluster_name)
-    with oc.tls_verify(enable=False):
-        oc.invoke('adm', ['must-gather', '--' ,'/usr/bin/gather && /usr/bin/gather_audit_logs', '--image-stream=openshift/must-gather', set(output_list), set(bundle_must_gather)])
-    directory_path, filename = os.path.split(newest_file_in_current_path())
-    create_tar(f'{directory_path}/{filename}', f'{current_path}/{filename}.tar.gz')
+
+    if len(output_list) or len(bundle_must_gather):
+        print("Image list:", " ".join(set(output_list)), " ".join(set(bundle_must_gather)))
     
+    with oc.tls_verify(enable=False):
+        invoke_must_gather(output_list, bundle_must_gather)
+    directory_path, filename = os.path.split(newest_file_in_current_path())
+
+    create_tar(f'{directory_path}/{filename}', f'{output_path}/{filename}.tar.gz')
+    
+
 if __name__ == "__main__":
     main()

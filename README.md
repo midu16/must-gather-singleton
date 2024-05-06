@@ -16,8 +16,28 @@ The Containerfile ensures the following prerequisites installed and configured:
 
 ## Container Build Instructions
 
-> podman build .
+> [!NOTE]  
+> podman build --build-arg OCP_VERSION=stable-4.14 .
 
+Valid values for OCP_VERSION are any listed [HERE](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/).
+
+## Local Container Run Instructions
+
+> podman run --rm -it --name must-gather-singleton-spoke-1 -e KUBECONFIG=/apps/must-gather/kubeconfig -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host IMAGE_ID
+
+## Prebuilt Container Run Instructions
+
+> podman run --rm -it --name must-gather-singleton-spoke-1 -e KUBECONFIG=/apps/must-gather/kubeconfig -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/midu/must-gather-singleton.x86_64:latest
+
+## Run the container
+
+Data inputs needed:
+
+- Host directory for collected directory output. This will be mapped to /apps/must-gather in the container
+- Kubeconfig file to access target cluster. This will be mapped to /root/.kube/config in the container
+
+
+> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/namespace/must-gather:version
 
 ## Functionality
 The script performs the following tasks:
@@ -25,6 +45,8 @@ The script performs the following tasks:
 - `Search for CSVs`: It searches for Cluster Service Versions (CSVs) in the Kubernetes or OpenShift cluster.
 
 - `Must-Gather`: It generates a must-gather command based on the related images found and executes it.
+
+- Bundle Output: It compresses the must-gather outputs into a tgz file in the mapped volume 
 
 
 ## Operators 
