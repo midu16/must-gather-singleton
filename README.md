@@ -23,11 +23,11 @@ Valid values for OCP_VERSION are any listed [HERE](https://mirror.openshift.com/
 
 ## Local Container Run Instructions
 
-> podman run --rm -it --name must-gather-singleton-spoke-1 -e KUBECONFIG=/apps/must-gather/kubeconfig -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host IMAGE_ID
+> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host IMAGE_ID
 
 ## Prebuilt Container Run Instructions
 
-> podman run --rm -it --name must-gather-singleton-spoke-1 -e KUBECONFIG=/apps/must-gather/kubeconfig -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/midu/must-gather-singleton.x86_64:latest
+> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/midu/must-gather-singleton:version
 
 ## Run the container
 
@@ -35,7 +35,6 @@ Data inputs needed:
 
 - Host directory for collected directory output. This will be mapped to /apps/must-gather in the container
 - Kubeconfig file to access target cluster. This will be mapped to /root/.kube/config in the container
-
 
 > podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/namespace/must-gather:version
 
