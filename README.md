@@ -19,6 +19,16 @@ The Containerfile ensures the following prerequisites installed and configured:
 > [!NOTE]  
 > podman build .
 
+## Run the container
+
+Data inputs needed:
+
+- Host directory for collected directory output. This will be mapped to /apps/must-gather in the container
+- Kubeconfig file to access target cluster. This will be mapped to /root/.kube/config in the container
+
+
+> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/namespace/must-gather:version
+
 ## Functionality
 The script performs the following tasks:
 

@@ -10,11 +10,10 @@ ARG SOURCE="https://github.com/midu16/must-gather-singleton/Containerfile"
 
 COPY scripts/* /opt/
 
-#RUN microdnf update -y; microdnf upgrade -y; 
-RUN microdnf -y install python3 tar gzip; microdnf clean all; pip3 install -r /opt/requirements.txt ; mkdir -p /apps/must-gather ; curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.14.10/openshift-client-linux-4.14.10.tar.gz | tar -xz -C /bin/
+RUN microdnf -y install python3 tar gzip vi; microdnf clean all; pip3 install -r /opt/requirements.txt ; mkdir -p /apps/must-gather ; curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.14.10/openshift-client-linux-4.14.10.tar.gz | tar -xz -C /bin/
 
 # Set environment variable
-ENV KUBECONFIG=/apps/kubeconfig
+#ENV KUBECONFIG=/apps/kubeconfig
 
 # Create a directory in the container
 
@@ -22,4 +21,5 @@ ENV KUBECONFIG=/apps/kubeconfig
 VOLUME /apps/must-gather
 
 # Specify the command to run when the container starts
-CMD  ["/usr/bin/python3", "/opt/must-gather-singleton.py"]
+#CMD  ["/usr/bin/python3", "/opt/must-gather-singleton.py"]
+CMD  ["/opt/must-gather-singleton.py"]
