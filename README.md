@@ -55,7 +55,6 @@ To run the container based must gather script interactivly:
 > podman run --rm -d -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION /bin/bash
 > [root@xxxyyy /] # /opt/must-gather-singleton.py
 
-
 ## Functionality
 The script performs the following tasks:
 
