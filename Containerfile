@@ -23,5 +23,4 @@ RUN microdnf -y install python3 tar gzip vi; microdnf clean all; pip3 install -r
 VOLUME /apps/must-gather
 
 # Specify the command to run when the container starts
-#CMD  ["/usr/bin/python3", "/opt/must-gather-singleton.py"]
-CMD  ["/opt/must-gather-singleton.py"]
+CMD  ["/usr/bin/python3", "/opt/must-gather-singleton.py"]
