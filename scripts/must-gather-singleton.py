@@ -8,7 +8,9 @@ import argparse
 import tarfile
 import re
 
-def checkKubeConfig():
+args = None
+
+def checkKubeConfig( debug = False ):
     """
     Checks to see if the kubeconfig file is available.
     The KUBECONFIG environment variable is checked then
@@ -27,23 +29,24 @@ def checkKubeConfig():
     """
     retval = False
     config_file = ""
+    if debug: print("checkKubeConfig is called")
 
-    try:
-        if os.path.isfile( os.environ["KUBECONFIG"]):
-          print("Kubeconfig is a file")
-          config_file = os.environ["KUBECONFIG"]
-          retval = True
-        #this parameter pointing at an invalide file wins over a valid default file
-        elif os.environ["KUBECONFIG"]:
-          print("KUBECONFIG defined but not pointing a file")
-          retval = False
-    except KeyError:
-        print("KUBECONFIG key not found")
-        if os.path.isfile("/root/.kube/config"):
-          print("Default file found")
-          config_file = "/root/.kube/config"
-          retval = True
+    if "KUBECONFIG" in os.environ and os.path.isfile( os.environ["KUBECONFIG"]):
+        if debug: print("KUBECONFIG is defined and pointing at a file")
+        config_file = os.environ["KUBECONFIG"]
+        retval = True
+    #this parameter pointing at an invalide file wins over a valid default file
+    elif "KUBECONFIG" in os.environ and os.environ["KUBECONFIG"]:
+        if debug: print("KUBECONFIG defined but not pointing at a file")
+        retval = False
+    elif os.path.isfile("/root/.kube/config"):
+        if debug: print("Default kube config file found")
+        config_file = "/root/.kube/config"
+        retval = True
+    else:
+        if debug: print("No kube config found")
 
+    if debug: print("checkKubeConfig returning:", retval)
     return retval, config_file
 
 
@@ -98,9 +101,11 @@ def get_csv_related_images_with_keyword(keyword):
         return []
 
 
-def get_cluster_name(config_file = ""):
+def get_cluster_name(config_file = "", debug = False):
     cluster_name = ""
     retval = True
+
+    if debug: print("get_cluster_name called")
 
     try:
         # Load Kubernetes configuration
@@ -122,9 +127,10 @@ def get_cluster_name(config_file = ""):
         cluster_name = "Error: " + str(e)
         retval = False
 
+    if debug: print("get_cluster_name returning ", retval, " and ", cluster_name )
     return retval, cluster_name
 
-def newest_file_in_current_path():
+def newest_file_in_current_path( debug = False ):
     """
     Determine the newest file in the current directory.
 
@@ -141,7 +147,7 @@ def newest_file_in_current_path():
     return os.path.join(current_path, newest_file)
 
 
-def create_tar(directory_path, tarfile_name):
+def create_tar(directory_path = "", tarfile_name = ""):
     """
     Create a tar file from a directory.
 
@@ -247,25 +253,62 @@ def get_must_gather_url(operator_info):
 
     return url
 
-def validate_directory_path():
+def checkDebug(debug = None):
+    """
+    Checks to see if the --debug parameter is passed on the command line
+
+    Returns:
+        True: If debugging is enabled
+        False: If debugging is not enabled
+    """
+    retval = False
+
+    #print("checkDebug called")
+    if debug != "Not enabled":
+        retval = True
+        if retval: print("Debug printing enabled by command line")
+
+    if "DEBUG" in  os.environ:
+        retval = True
+        if retval: print("Debug printing enabled by environtment variable")
+
+    return retval
+
+def validate_directory_path(directory_path = "", debug = False):
     """
     Validating that the provided directory path exists.
 
     Returns:
         str: The message of path validation provided.
     """
-    parser = argparse.ArgumentParser(description="Validate directory path.")
-    parser.add_argument("--path", type=str, help="Full directory path to validate", default='/apps/must-gather/')
-    args = parser.parse_args()
 
-    directory_path = args.path
+    retval = None
 
+    if debug: print("validate_directory_path called")
     if os.path.exists(directory_path):
-        print(f"The provided path '{directory_path}' is valid.")
-        return directory_path
+        if debug: print(f"The provided path '{directory_path}' is valid.")
+        retval =  directory_path
     else:
         print(f"Error: The provided path '{directory_path}' does not exist.")
-        return None
+
+    if debug: print("validate_directory_path returning:", retval )
+    return retval
+
+def processArguments():
+    """
+    Process the command line arguments
+    """
+    args = None
+    parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--path", type = str, help = "Full directory path to validate", default = '/apps/must-gather/', required = False)
+    parser.add_argument("--debug", type = str, help = "Enable Debug", default = 'Not enabled', required = False, nargs = None)
+    args = parser.parse_args()
+
+    print("XXX Command line args: ", args)
+
+    #print("Debug: %s" % (args.debug))
+
+    return args
 
 def invoke_must_gather(output_list, bundle_must_gather):
     """
@@ -302,22 +345,30 @@ def main():
     bundle_must_gather = []
     mirror_must_gather = []
     output_list = []
+    print_debug = False
 
-    retval, config_file = checkKubeConfig()
+    args = processArguments()
+    print_debug = checkDebug( args.debug )
+
+    retval, config_file = checkKubeConfig( debug = print_debug )
     if not retval:
       print("Kubeconfig not found")
       sys.exit(-1)
 
-    output_path = validate_directory_path()
+    output_path = validate_directory_path( directory_path = args.path, debug = print_debug)
     if output_path == None:
         print("Output directory path not found.")
         sys.exit(-1)
 
-    retval, cluster_name = get_cluster_name(config_file = config_file)
+    print("XXX I am at the point of testing this scirpt in a container in a real OSP environemtn. Log into BOS2, copy this script, edit and test within the container there. Bring the finished script back.")
+
+    retval, cluster_name = get_cluster_name(config_file = config_file, debug = print_debug)
     if not retval:
         print("Could not find cluster name: %s" %(cluster_name))
         sys.exit(-1)
-    print("Cluster name: %s" % (cluster_name))
+    if print_debug: print("Cluster name: %s" % (cluster_name))
+
+    sys.exit(-1)
 
     for index in keyword:
         matching_csvs = get_csv_related_images_with_keyword(index)
@@ -350,7 +401,7 @@ def main():
         invoke_must_gather(output_list, bundle_must_gather)
     directory_path, filename = os.path.split(newest_file_in_current_path())
 
-    create_tar(f'{directory_path}/{filename}', f'{output_path}/{filename}.tar.gz')
+    create_tar( directory_path = f'{directory_path}/{filename}', tarfile_name = f'{output_path}/{filename}.tar.gz')
     
 
 if __name__ == "__main__":
