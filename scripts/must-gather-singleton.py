@@ -326,7 +326,7 @@ def main():
             print("No CSVs were found with a matching must gather image keyword %s" %(index))
             continue
 
-        print(f"CSVs with related images containing keyword '{index}':")
+        print(f"Found CSVs with related images containing keyword '{index}'.")
         for csv in matching_csvs:
             # print(f"\nCSV Name: {csv['csv_name']}")
             operator = operator_info(csv['csv_name'])
