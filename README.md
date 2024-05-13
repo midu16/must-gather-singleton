@@ -23,11 +23,11 @@ Valid values for OCP_VERSION are any listed [HERE](https://mirror.openshift.com/
 
 ## Local Container Run Instructions
 
-> podman run --rm -it --name must-gather-singleton-spoke-1 -e KUBECONFIG=/apps/must-gather/kubeconfig -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host IMAGE_ID
+> podman run --rm -it --name must-gather-singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z IMAGE_ID
 
 ## Prebuilt Container Run Instructions
 
-> podman run --rm -it --name must-gather-singleton-spoke-1 -e KUBECONFIG=/apps/must-gather/kubeconfig -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/midu/must-gather-singleton.x86_64:latest
+> podman run --rm -it --name must-gather-singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather-singleton.x86_64:latest
 
 ## Run the container
 
@@ -37,7 +37,15 @@ Data inputs needed:
 - Kubeconfig file to access target cluster. This will be mapped to /root/.kube/config in the container
 
 
-> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z --pid=host --ipc=host quay.io/namespace/must-gather:version
+> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+
+## Debug output.
+
+The container supports printing extra deubg output. The interactive script supports the `--debug TRUE` command line argument. The container and script also support passing `DEBUG=TRUE` as an environment variable. 
+
+Example: 
+
+> podman run --rm -it --name must-gather-singleton-x --env DEBUG=TRUE -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
 
 ## Functionality
 The script performs the following tasks:

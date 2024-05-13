@@ -50,7 +50,7 @@ def checkKubeConfig( debug = False ):
     return retval, config_file
 
 
-def get_csv_related_images_with_keyword(keyword):
+def get_csv_related_images_with_keyword(keyword = '', debug = False):
     """
     Return a dictionary called matching_csvs mapping the
     csv.metadata.namespace:csv.metadata.name:csv.spec.relatedImages.image
@@ -59,6 +59,11 @@ def get_csv_related_images_with_keyword(keyword):
     Parameters:
         keyword (str): csv.spec.relatedImages.name keyword must-gather match
     """
+
+    matching_csvs = []
+    ret_str = "Ok"
+
+    if debug: print("get_csv_related_images_with_keyword called for keyword %s" % (keyword))
     try:
         # Load Kubernetes configuration
         config.load_kube_config()
@@ -76,8 +81,6 @@ def get_csv_related_images_with_keyword(keyword):
             plural="clusterserviceversions"
         )
 
-        matching_csvs = []
-
         # Iterate through each CSV
         for csv in csvs["items"]:
             csv_name = csv["metadata"]["name"]
@@ -94,12 +97,13 @@ def get_csv_related_images_with_keyword(keyword):
                     })
                     break  # Once a match is found, no need to check other related images
 
-        return matching_csvs
-
     except Exception as e:
-        print("Exception:", e)
-        return []
+        if debug: print("Exception:", e)
+        ret_str = e
+        matching_csvs = []
 
+    if debug: print("get_csv_related_images_with_keyword return %d items" % (len(matching_csvs)))
+    return matching_csvs, ret_str
 
 def get_cluster_name(config_file = "", debug = False):
     cluster_name = ""
@@ -137,6 +141,7 @@ def newest_file_in_current_path( debug = False ):
     Returns:
         str: Path to the newest file.
     """
+    if debug: print("newest_file_in_current_path called")
     current_path = os.getcwd()
     files = os.listdir(current_path)
 
@@ -144,10 +149,11 @@ def newest_file_in_current_path( debug = False ):
         return None
 
     newest_file = max(files, key=lambda f: os.path.getmtime(os.path.join(current_path, f)))
-    return os.path.join(current_path, newest_file)
+    if debug: print("newest_file_in_current_path returning path: %s, file: %s" %(current_path, newest_file))
+    return current_path, newest_file
 
 
-def create_tar(directory_path = "", tarfile_name = ""):
+def create_tar(directory_path = "", tarfile_name = "", debug = False):
     """
     Create a tar file from a directory.
 
@@ -155,12 +161,20 @@ def create_tar(directory_path = "", tarfile_name = ""):
         directory_path (str): Path to the directory to be archived.
         tarfile_name (str): Name of the tar file to be created.
     """
+    retval = False
+    message = ""
+    if debug: print("create_tar called")
     try:
         with tarfile.open(tarfile_name, "w") as tar:
             tar.add(directory_path, arcname=os.path.basename(directory_path))
         print(f"Tar file '{tarfile_name}' created successfully.")
+        retval = True
+        message = tarfile_name
     except Exception as e:
         print(f"Error occurred while creating tar file: {e}")
+        message = e
+
+    return retval, message
 
 def operator_info(input_string):
     """
@@ -304,13 +318,9 @@ def processArguments():
     parser.add_argument("--debug", type = str, help = "Enable Debug", default = 'Not enabled', required = False, nargs = None)
     args = parser.parse_args()
 
-    print("XXX Command line args: ", args)
-
-    #print("Debug: %s" % (args.debug))
-
     return args
 
-def invoke_must_gather(output_list, bundle_must_gather):
+def invoke_must_gather(output_list = [], bundle_must_gather = [], debug = False):
     """
     Invoking the must-gather command to OCP.
 
@@ -322,21 +332,29 @@ def invoke_must_gather(output_list, bundle_must_gather):
     Returns:
         str: The cluster must-gather collection.
     """
+
+    if debug: print("invoke_must_gather called")
+
+    #Note: openshift_client.invoke() uses the OS installed oc command. 
+    #Ref: https://github.com/openshift/openshift-client-python?tab=readme-ov-file#something-missing
+    #Question: Does the invoke() function throw an exception?
     if not output_list and not bundle_must_gather:
-        print("Using the OCP default must gather")
+        if debug: print("Using the OCP default must gather")
         # If both output_list and bundle_must_gather are empty, invoke with default parameters.
         # This ensures that all the available means of collections are performed.
         oc.invoke('adm', ['must-gather', '--',
                           '/usr/bin/gather && /usr/bin/gather_audit_logs',
                           '--image-stream=openshift/must-gather'])
     else:
-        print("Calling found must gather")
+        if debug: print("Calling found must gather")
         # Otherwise, invoke with specified output_list and bundle_must_gather
         oc.invoke('adm', ['must-gather', '--',
                           '/usr/bin/gather && /usr/bin/gather_audit_logs',
                           '--image-stream=openshift/must-gather',
                           set(output_list),
                           set(bundle_must_gather)])
+
+    if debug: print("invoke_must_gather finished")
 
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
@@ -360,22 +378,20 @@ def main():
         print("Output directory path not found.")
         sys.exit(-1)
 
-    print("XXX I am at the point of testing this scirpt in a container in a real OSP environemtn. Log into BOS2, copy this script, edit and test within the container there. Bring the finished script back.")
-
     retval, cluster_name = get_cluster_name(config_file = config_file, debug = print_debug)
     if not retval:
         print("Could not find cluster name: %s" %(cluster_name))
         sys.exit(-1)
     if print_debug: print("Cluster name: %s" % (cluster_name))
 
-    sys.exit(-1)
-
     for index in keyword:
-        matching_csvs = get_csv_related_images_with_keyword(index)
+        matching_csvs, message = get_csv_related_images_with_keyword(keyword = index, debug = print_debug)
 
         if len(matching_csvs) == 0:
-            print("No CSVs were found with a matching must gather image keyword %s" %(index))
+            if print_debug: print("No CSVs were found with a matching must gather image keyword %s" %(index))
             continue
+        else:
+            if print_debug: print("Returned %d CSVs for image keyword %s" %(len(matching_csvs),index))
 
         print(f"CSVs with related images containing keyword '{index}':")
         for csv in matching_csvs:
@@ -398,10 +414,16 @@ def main():
         print("Image list:", " ".join(set(output_list)), " ".join(set(bundle_must_gather)))
     
     with oc.tls_verify(enable=False):
-        invoke_must_gather(output_list, bundle_must_gather)
-    directory_path, filename = os.path.split(newest_file_in_current_path())
+        invoke_must_gather(output_list = output_list, bundle_must_gather = bundle_must_gather, debug = print_debug)
 
-    create_tar( directory_path = f'{directory_path}/{filename}', tarfile_name = f'{output_path}/{filename}.tar.gz')
+    directory_path, filename = newest_file_in_current_path(debug = print_debug)
+
+    retval, message = create_tar( directory_path = f'{directory_path}/{filename}', tarfile_name = f'{output_path}/{filename}.tar.gz', debug = print_debug)
+
+    if retval:
+        print("Successfully compressed must gather data to %s" %( message ) )
+    else:
+        print("Error compressing must gather data: %s" % ( message ) )
     
 
 if __name__ == "__main__":
