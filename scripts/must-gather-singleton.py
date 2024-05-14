@@ -315,7 +315,7 @@ def processArguments():
     args = None
     parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--path", type = str, help = "Full directory path to validate", default = '/apps/must-gather/', required = False)
-    parser.add_argument("--debug", type = str, help = "Enable Debug", default = 'Not enabled', required = False, nargs = None)
+    parser.add_argument("--debug", action = "store_true", help = "Enable Debug", default = 'Not enabled', required = False)
     args = parser.parse_args()
 
     return args
@@ -332,29 +332,35 @@ def invoke_must_gather(output_list = [], bundle_must_gather = [], debug = False)
     Returns:
         str: The cluster must-gather collection.
     """
-
+    retval = True
+    message = "Success"
     if debug: print("invoke_must_gather called")
 
-    #Note: openshift_client.invoke() uses the OS installed oc command. 
-    #Ref: https://github.com/openshift/openshift-client-python?tab=readme-ov-file#something-missing
-    #Question: Does the invoke() function throw an exception?
-    if not output_list and not bundle_must_gather:
-        if debug: print("Using the OCP default must gather")
-        # If both output_list and bundle_must_gather are empty, invoke with default parameters.
-        # This ensures that all the available means of collections are performed.
-        oc.invoke('adm', ['must-gather', '--',
-                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
-                          '--image-stream=openshift/must-gather'])
-    else:
-        if debug: print("Calling found must gather")
-        # Otherwise, invoke with specified output_list and bundle_must_gather
-        oc.invoke('adm', ['must-gather', '--',
-                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
-                          '--image-stream=openshift/must-gather',
-                          set(output_list),
-                          set(bundle_must_gather)])
+    try:
+        #Note: openshift_client.invoke() uses the OS installed oc command. 
+        #Ref: https://github.com/openshift/openshift-client-python?tab=readme-ov-file#something-missing
+        if not output_list and not bundle_must_gather:
+            if debug: print("Using the OCP default must gather")
+            # If both output_list and bundle_must_gather are empty, invoke with default parameters.
+            # This ensures that all the available means of collections are performed.
+            oc.invoke('adm', ['must-gather', '--',
+                            '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                            '--image-stream=openshift/must-gather'])
+        else:
+            if debug: print("Calling found must gather")
+            # Otherwise, invoke with specified output_list and bundle_must_gather
+            oc.invoke('adm', ['must-gather', '--',
+                            '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                            '--image-stream=openshift/must-gather',
+                            set(output_list),
+                            set(bundle_must_gather)])
+    except Exception as e:
+        message = e.args
+        retval = False
+        if debug: print(f"Error occurred while running must-gather: {message}")
 
     if debug: print("invoke_must_gather finished")
+    return retval, message
 
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
@@ -414,7 +420,11 @@ def main():
         print("Image list:", " ".join(set(output_list)), " ".join(set(bundle_must_gather)))
     
     with oc.tls_verify(enable=False):
-        invoke_must_gather(output_list = output_list, bundle_must_gather = bundle_must_gather, debug = print_debug)
+        retval, message = invoke_must_gather(output_list = output_list, bundle_must_gather = bundle_must_gather, debug = print_debug)
+
+    if retval == False:
+        print("Error collecting must-gather data: %s" % (message))
+        sys.exit(-1)
 
     directory_path, filename = newest_file_in_current_path(debug = print_debug)
 

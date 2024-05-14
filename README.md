@@ -41,11 +41,11 @@ Data inputs needed:
 
 ## Debug output.
 
-The container supports printing extra deubg output. The interactive script supports the `--debug TRUE` command line argument. The container and script also support passing `DEBUG=TRUE` as an environment variable. 
+The container supports printing extra deubg output. The interactive script supports the `--debug` command line argument. The container and script also support passing `DEBUG=""` as an environment variable. 
 
 Example: 
 
-> podman run --rm -it --name must-gather-singleton-x --env DEBUG=TRUE -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+> podman run --rm -it --name must-gather-singleton-x --env DEBUG="" -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
 
 ## Functionality
 The script performs the following tasks:
