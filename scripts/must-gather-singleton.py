@@ -8,7 +8,9 @@ import argparse
 import tarfile
 import re
 
-def checkKubeConfig():
+args = None
+
+def checkKubeConfig( debug = False ):
     """
     Checks to see if the kubeconfig file is available.
     The KUBECONFIG environment variable is checked then
@@ -27,27 +29,28 @@ def checkKubeConfig():
     """
     retval = False
     config_file = ""
+    if debug: print("checkKubeConfig is called")
 
-    try:
-        if os.path.isfile( os.environ["KUBECONFIG"]):
-          print("Kubeconfig is a file")
-          config_file = os.environ["KUBECONFIG"]
-          retval = True
-        #this parameter pointing at an invalide file wins over a valid default file
-        elif os.environ["KUBECONFIG"]:
-          print("KUBECONFIG defined but not pointing a file")
-          retval = False
-    except KeyError:
-        print("KUBECONFIG key not found")
-        if os.path.isfile("/root/.kube/config"):
-          print("Default file found")
-          config_file = "/root/.kube/config"
-          retval = True
+    if "KUBECONFIG" in os.environ and os.path.isfile( os.environ["KUBECONFIG"]):
+        if debug: print("KUBECONFIG is defined and pointing at a file")
+        config_file = os.environ["KUBECONFIG"]
+        retval = True
+    #this parameter pointing at an invalide file wins over a valid default file
+    elif "KUBECONFIG" in os.environ and os.environ["KUBECONFIG"]:
+        if debug: print("KUBECONFIG defined but not pointing at a file")
+        retval = False
+    elif os.path.isfile("/root/.kube/config"):
+        if debug: print("Default kube config file found")
+        config_file = "/root/.kube/config"
+        retval = True
+    else:
+        if debug: print("No kube config found")
 
+    if debug: print("checkKubeConfig returning:", retval)
     return retval, config_file
 
 
-def get_csv_related_images_with_keyword(keyword):
+def get_csv_related_images_with_keyword(keyword = '', debug = False):
     """
     Return a dictionary called matching_csvs mapping the
     csv.metadata.namespace:csv.metadata.name:csv.spec.relatedImages.image
@@ -56,6 +59,11 @@ def get_csv_related_images_with_keyword(keyword):
     Parameters:
         keyword (str): csv.spec.relatedImages.name keyword must-gather match
     """
+
+    matching_csvs = []
+    ret_str = "Ok"
+
+    if debug: print("get_csv_related_images_with_keyword called for keyword %s" % (keyword))
     try:
         # Load Kubernetes configuration
         config.load_kube_config()
@@ -73,8 +81,6 @@ def get_csv_related_images_with_keyword(keyword):
             plural="clusterserviceversions"
         )
 
-        matching_csvs = []
-
         # Iterate through each CSV
         for csv in csvs["items"]:
             csv_name = csv["metadata"]["name"]
@@ -91,16 +97,19 @@ def get_csv_related_images_with_keyword(keyword):
                     })
                     break  # Once a match is found, no need to check other related images
 
-        return matching_csvs
-
     except Exception as e:
-        print("Exception:", e)
-        return []
+        if debug: print("Exception:", e)
+        ret_str = e
+        matching_csvs = []
 
+    if debug: print("get_csv_related_images_with_keyword return %d items" % (len(matching_csvs)))
+    return matching_csvs, ret_str
 
-def get_cluster_name(config_file = ""):
+def get_cluster_name(config_file = "", debug = False):
     cluster_name = ""
     retval = True
+
+    if debug: print("get_cluster_name called")
 
     try:
         # Load Kubernetes configuration
@@ -122,15 +131,17 @@ def get_cluster_name(config_file = ""):
         cluster_name = "Error: " + str(e)
         retval = False
 
+    if debug: print("get_cluster_name returning ", retval, " and ", cluster_name )
     return retval, cluster_name
 
-def newest_file_in_current_path():
+def newest_file_in_current_path( debug = False ):
     """
     Determine the newest file in the current directory.
 
     Returns:
         str: Path to the newest file.
     """
+    if debug: print("newest_file_in_current_path called")
     current_path = os.getcwd()
     files = os.listdir(current_path)
 
@@ -138,10 +149,11 @@ def newest_file_in_current_path():
         return None
 
     newest_file = max(files, key=lambda f: os.path.getmtime(os.path.join(current_path, f)))
-    return os.path.join(current_path, newest_file)
+    if debug: print("newest_file_in_current_path returning path: %s, file: %s" %(current_path, newest_file))
+    return current_path, newest_file
 
 
-def create_tar(directory_path, tarfile_name):
+def create_tar(directory_path = "", tarfile_name = "", debug = False):
     """
     Create a tar file from a directory.
 
@@ -149,12 +161,20 @@ def create_tar(directory_path, tarfile_name):
         directory_path (str): Path to the directory to be archived.
         tarfile_name (str): Name of the tar file to be created.
     """
+    retval = False
+    message = ""
+    if debug: print("create_tar called")
     try:
         with tarfile.open(tarfile_name, "w") as tar:
             tar.add(directory_path, arcname=os.path.basename(directory_path))
         print(f"Tar file '{tarfile_name}' created successfully.")
+        retval = True
+        message = tarfile_name
     except Exception as e:
         print(f"Error occurred while creating tar file: {e}")
+        message = e
+
+    return retval, message
 
 def operator_info(input_string):
     """
@@ -247,27 +267,60 @@ def get_must_gather_url(operator_info):
 
     return url
 
-def validate_directory_path():
+def checkDebug(debug = None):
+    """
+    Checks to see if the --debug parameter is passed on the command line
+
+    Returns:
+        True: If debugging is enabled
+        False: If debugging is not enabled
+    """
+    retval = False
+
+    #print("checkDebug called")
+    if debug != "Not enabled":
+        retval = True
+        if retval: print("Debug printing enabled by command line")
+
+    if "DEBUG" in  os.environ:
+        retval = True
+        if retval: print("Debug printing enabled by environtment variable")
+
+    return retval
+
+def validate_directory_path(directory_path = "", debug = False):
     """
     Validating that the provided directory path exists.
 
     Returns:
         str: The message of path validation provided.
     """
-    parser = argparse.ArgumentParser(description="Validate directory path.")
-    parser.add_argument("--path", type=str, help="Full directory path to validate", default='/apps/must-gather/')
-    args = parser.parse_args()
 
-    directory_path = args.path
+    retval = None
 
+    if debug: print("validate_directory_path called")
     if os.path.exists(directory_path):
-        print(f"The provided path '{directory_path}' is valid.")
-        return directory_path
+        if debug: print(f"The provided path '{directory_path}' is valid.")
+        retval =  directory_path
     else:
         print(f"Error: The provided path '{directory_path}' does not exist.")
-        return None
 
-def invoke_must_gather(output_list, bundle_must_gather):
+    if debug: print("validate_directory_path returning:", retval )
+    return retval
+
+def processArguments():
+    """
+    Process the command line arguments
+    """
+    args = None
+    parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--path", type = str, help = "Full directory path to validate", default = '/apps/must-gather/', required = False)
+    parser.add_argument("--debug", action = "store_true", help = "Enable Debug", default = 'Not enabled', required = False)
+    args = parser.parse_args()
+
+    return args
+
+def invoke_must_gather(output_list = [], bundle_must_gather = [], debug = False):
     """
     Invoking the must-gather command to OCP.
 
@@ -279,21 +332,35 @@ def invoke_must_gather(output_list, bundle_must_gather):
     Returns:
         str: The cluster must-gather collection.
     """
-    if not output_list and not bundle_must_gather:
-        print("Using the OCP default must gather")
-        # If both output_list and bundle_must_gather are empty, invoke with default parameters.
-        # This ensures that all the available means of collections are performed.
-        oc.invoke('adm', ['must-gather', '--',
-                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
-                          '--image-stream=openshift/must-gather'])
-    else:
-        print("Calling found must gather")
-        # Otherwise, invoke with specified output_list and bundle_must_gather
-        oc.invoke('adm', ['must-gather', '--',
-                          '/usr/bin/gather && /usr/bin/gather_audit_logs',
-                          '--image-stream=openshift/must-gather',
-                          set(output_list),
-                          set(bundle_must_gather)])
+    retval = True
+    message = "Success"
+    if debug: print("invoke_must_gather called")
+
+    try:
+        #Note: openshift_client.invoke() uses the OS installed oc command. 
+        #Ref: https://github.com/openshift/openshift-client-python?tab=readme-ov-file#something-missing
+        if not output_list and not bundle_must_gather:
+            if debug: print("Using the OCP default must gather")
+            # If both output_list and bundle_must_gather are empty, invoke with default parameters.
+            # This ensures that all the available means of collections are performed.
+            oc.invoke('adm', ['must-gather', '--',
+                            '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                            '--image-stream=openshift/must-gather'])
+        else:
+            if debug: print("Calling found must gather")
+            # Otherwise, invoke with specified output_list and bundle_must_gather
+            oc.invoke('adm', ['must-gather', '--',
+                            '/usr/bin/gather && /usr/bin/gather_audit_logs',
+                            '--image-stream=openshift/must-gather',
+                            set(output_list),
+                            set(bundle_must_gather)])
+    except Exception as e:
+        message = e.args
+        retval = False
+        if debug: print(f"Error occurred while running must-gather: {message}")
+
+    if debug: print("invoke_must_gather finished")
+    return retval, message
 
 def main():
     keyword = ["must-gather", "cluster-logging-operator", "must_gather_image", "mustgather", "must_gather"]
@@ -302,29 +369,35 @@ def main():
     bundle_must_gather = []
     mirror_must_gather = []
     output_list = []
+    print_debug = False
 
-    retval, config_file = checkKubeConfig()
+    args = processArguments()
+    print_debug = checkDebug( args.debug )
+
+    retval, config_file = checkKubeConfig( debug = print_debug )
     if not retval:
       print("Kubeconfig not found")
       sys.exit(-1)
 
-    output_path = validate_directory_path()
+    output_path = validate_directory_path( directory_path = args.path, debug = print_debug)
     if output_path == None:
         print("Output directory path not found.")
         sys.exit(-1)
 
-    retval, cluster_name = get_cluster_name(config_file = config_file)
+    retval, cluster_name = get_cluster_name(config_file = config_file, debug = print_debug)
     if not retval:
         print("Could not find cluster name: %s" %(cluster_name))
         sys.exit(-1)
-    print("Cluster name: %s" % (cluster_name))
+    if print_debug: print("Cluster name: %s" % (cluster_name))
 
     for index in keyword:
-        matching_csvs = get_csv_related_images_with_keyword(index)
+        matching_csvs, message = get_csv_related_images_with_keyword(keyword = index, debug = print_debug)
 
         if len(matching_csvs) == 0:
-            print("No CSVs were found with a matching must gather image keyword %s" %(index))
+            if print_debug: print("No CSVs were found with a matching must gather image keyword %s" %(index))
             continue
+        else:
+            if print_debug: print("Returned %d CSVs for image keyword %s" %(len(matching_csvs),index))
 
         print(f"Found CSVs with related images containing keyword '{index}'.")
         for csv in matching_csvs:
@@ -347,10 +420,20 @@ def main():
         print("Image list:", " ".join(set(output_list)), " ".join(set(bundle_must_gather)))
     
     with oc.tls_verify(enable=False):
-        invoke_must_gather(output_list, bundle_must_gather)
-    directory_path, filename = os.path.split(newest_file_in_current_path())
+        retval, message = invoke_must_gather(output_list = output_list, bundle_must_gather = bundle_must_gather, debug = print_debug)
 
-    create_tar(f'{directory_path}/{filename}', f'{output_path}/{filename}.tar.gz')
+    if retval == False:
+        print("Error collecting must-gather data: %s" % (message))
+        sys.exit(-1)
+
+    directory_path, filename = newest_file_in_current_path(debug = print_debug)
+
+    retval, message = create_tar( directory_path = f'{directory_path}/{filename}', tarfile_name = f'{output_path}/{filename}.tar.gz', debug = print_debug)
+
+    if retval:
+        print("Successfully compressed must gather data to %s" %( message ) )
+    else:
+        print("Error compressing must gather data: %s" % ( message ) )
     
 
 if __name__ == "__main__":

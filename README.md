@@ -21,12 +21,22 @@ The Containerfile ensures the following prerequisites installed and configured:
 
 Valid values for OCP_VERSION are any listed below:
 
+
+## Local Container Run Instructions
+
+> podman run --rm -it --name must-gather-singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z IMAGE_ID
+
+## Prebuilt Container Run Instructions
+
+> podman run --rm -it --name must-gather-singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather-singleton.x86_64:latest
+
 Supported OCP versions:
 - 4.16
 - 4.15
 - 4.14
 - 4.13
 - 4.12
+
 
 ## Run the container
 
@@ -52,8 +62,16 @@ The progress can be monitored with the podman logs command
 
 To run the container based must gather script interactivly:
 
-> podman run --rm -d -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION /bin/bash
-> [root@xxxyyy /] # /opt/must-gather-singleton.py
+> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+
+## Debug output.
+
+The container supports printing extra deubg output. The interactive script supports the `--debug` command line argument. The container and script also support passing `DEBUG=""` as an environment variable. 
+
+Example: 
+
+> podman run --rm -it --name must-gather-singleton-x --env DEBUG="" -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+
 
 ## Functionality
 The script performs the following tasks:
