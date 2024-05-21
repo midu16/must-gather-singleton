@@ -123,7 +123,7 @@ def get_cluster_name(config_file = "", debug = False):
 
         # Retrieve the cluster name from the labels
         cluster_name = cluster_info.get('kubernetes.io/hostname', None)
-        
+
         if not cluster_name:
             retval = False
 
@@ -149,7 +149,8 @@ def newest_file_in_current_path( debug = False ):
         return None
 
     newest_file = max(files, key=lambda f: os.path.getmtime(os.path.join(current_path, f)))
-    if debug: print("newest_file_in_current_path returning path: %s, file: %s" %(current_path, newest_file))
+    if debug: print("newest_file_in_current_path returning path: %s, file: %s" 
+                    %(current_path, newest_file))
     return current_path, newest_file
 
 
@@ -210,7 +211,7 @@ def get_must_gather_url(operator_info):
         operator_info (dict): A dictionary containing operator name and major version.
 
     Returns:
-        str: The registry URL corresponding to the operator name and major version and operator version as tag.
+        str: The registry URL corresponding to the operator name, major version and operator version as tag.
     """
     operator_mapping = {
         'lvms-operator': {
@@ -337,8 +338,8 @@ def invoke_must_gather(output_list = [], bundle_must_gather = [], debug = False)
     if debug: print("invoke_must_gather called")
 
     try:
-        #Note: openshift_client.invoke() uses the OS installed oc command. 
-        #Ref: https://github.com/openshift/openshift-client-python?tab=readme-ov-file#something-missing
+        # Note: openshift_client.invoke() uses the OS installed oc command. 
+        # Ref: https://github.com/openshift/openshift-client-python?tab=readme-ov-file#something-missing
         if not output_list and not bundle_must_gather:
             if debug: print("Using the OCP default must gather")
             # If both output_list and bundle_must_gather are empty, invoke with default parameters.
