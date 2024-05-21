@@ -2,15 +2,15 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "main" ]
 
 jobs:
 
   build:
 
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, x64]
 
     steps:
     - uses: actions/checkout@v4
