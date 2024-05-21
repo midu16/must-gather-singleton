@@ -211,7 +211,8 @@ def get_must_gather_url(operator_info):
         operator_info (dict): A dictionary containing operator name and major version.
 
     Returns:
-        str: The registry URL corresponding to the operator name, major version and operator version as tag.
+        str: The registry URL corresponding to the operator name, 
+            major version and operator version as tag.
     """
     operator_mapping = {
         'lvms-operator': {
@@ -315,8 +316,14 @@ def processArguments():
     """
     args = None
     parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--path", type = str, help = "Full directory path to validate", default = '/apps/must-gather/', required = False)
-    parser.add_argument("--debug", action = "store_true", help = "Enable Debug", default = 'Not enabled', required = False)
+    parser.add_argument("--path", type = str, 
+                        help = "Full directory path to validate", 
+                        default = '/apps/must-gather/', 
+                        required = False)
+    parser.add_argument("--debug", action = "store_true", 
+                        help = "Enable Debug", 
+                        default = 'Not enabled', 
+                        required = False)
     args = parser.parse_args()
 
     return args
