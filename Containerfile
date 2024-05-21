@@ -24,3 +24,4 @@ VOLUME /apps/must-gather
 
 # Specify the command to run when the container starts
 CMD  ["/usr/bin/python3", "/opt/must-gather-singleton.py"]
+

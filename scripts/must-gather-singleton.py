@@ -399,7 +399,7 @@ def main():
         else:
             if print_debug: print("Returned %d CSVs for image keyword %s" %(len(matching_csvs),index))
 
-        print(f"CSVs with related images containing keyword '{index}':")
+        print(f"Found CSVs with related images containing keyword '{index}'.")
         for csv in matching_csvs:
             # print(f"\nCSV Name: {csv['csv_name']}")
             operator = operator_info(csv['csv_name'])
