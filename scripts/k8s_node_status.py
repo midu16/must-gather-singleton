@@ -1,9 +1,7 @@
 # k8s_node_status.py
 import argparse
-from kubernetes import client, config
-import openshift_client as oc
-
-
+from kubernetes import client, config  # pylint: disable=import-error
+import openshift_client as oc  # pylint: disable=import-error
 
 def get_node_status():
     # Load kube config
@@ -27,10 +25,6 @@ def get_node_status():
                 else:
                     not_ready_nodes.append(node.metadata.name)
 
-    # Create log messages
-    #ready_message = "Nodes in Ready state:\n" + "\n".join(ready_nodes)
-    #not_ready_message = "Nodes in NotReady state:\n" + "\n".join(not_ready_nodes)
-
     return ready_nodes, not_ready_nodes
 
 def main():
@@ -38,7 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description="Get the status of Kubernetes nodes.")
     args = parser.parse_args()
 
-    ready_message, not_ready_message = get_node_status()
+    ready_nodes, not_ready_nodes = get_node_status()
 
     # Print the messages
     print("Nodes in Ready state:\n" + "\n".join(ready_nodes))
