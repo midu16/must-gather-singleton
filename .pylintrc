@@ -94,3 +94,6 @@ additional-builtins=
 
 # Tells whether we should check for unused import in __init__ files.
 init-import=no
+
+#set indent to 2 spaces
+indent-string="  "
