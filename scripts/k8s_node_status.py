@@ -1,5 +1,5 @@
 # k8s_node_status.py
-import argparse
+
 from kubernetes import client, config  # pylint: disable=import-error
 
 def get_node_status():
