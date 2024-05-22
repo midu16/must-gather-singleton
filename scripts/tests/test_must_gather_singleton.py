@@ -11,7 +11,6 @@ from must_gather_singleton import (
     get_must_gather_url,
     check_debug,
     validate_directory_path,
-    invoke_must_gather
 )
 
 @pytest.mark.parametrize("debug, expected", [
@@ -53,11 +52,10 @@ def test_create_tar(directory_path, tarfile_name):
 
 def test_operator_info():
   input_string = "lvms-operator.v4.14"
-  assert operator_info(input_string) == {'operator_name': 'lvms-operator', 
-                                           'operator_version': '4.14'}
+  assert operator_info(input_string) == {'operator_name': 'lvms-operator',
+    'operator_version': '4.14'}
 
 def test_get_must_gather_url():
-  info = {'operator_name': 'lvms-operator', 
-          'operator_major_version': '4', 
-          'operator_version': '4.14'}
+  info = {'operator_name': 'lvms-operator',
+    'operator_major_version': '4', 'operator_version': '4.14'}
   assert get_must_gather_url(info) == 'registry.redhat.io/lvms4/lvms-must-gather-rhel9:v4.14'
