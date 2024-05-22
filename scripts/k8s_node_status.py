@@ -1,11 +1,9 @@
 # k8s_node_status.py
+import argparse
 from kubernetes import client, config
 import openshift_client as oc
-import os
-import sys
-import argparse
-import tarfile
-import re
+
+
 
 def get_node_status():
     # Load kube config
