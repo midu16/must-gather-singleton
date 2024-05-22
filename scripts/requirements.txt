@@ -4,3 +4,4 @@
 openshift
 openshift-client
 kubernetes
+pytest
