@@ -23,7 +23,6 @@ def get_node_status():
                     ready_nodes.append(node.metadata.name)
                 else:
                     not_ready_nodes.append(node.metadata.name)
-
     return ready_nodes, not_ready_nodes
 
 def main():
