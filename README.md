@@ -1,6 +1,6 @@
-# must-gather-singleton
+# must_gather_singleton
 
-`must-gather-singleton` is a tool for collecting entire cluster stack data in a compact aggregated `must-gather` file.
+`must_gather_singleton` is a tool for collecting entire cluster stack data in a compact aggregated `must-gather` file.
 
 > [!CAUTION]
 > Unless specified otherwise, everything contained in this repository is unsupported by Red Hat.
@@ -24,11 +24,11 @@ Valid values for OCP_VERSION are any listed below:
 
 ## Local Container Run Instructions
 
-> podman run --rm -it --name must-gather-singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z IMAGE_ID
+> podman run --rm -it --name must_gather_singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z IMAGE_ID
 
 ## Prebuilt Container Run Instructions
 
-> podman run --rm -it --name must-gather-singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather-singleton.x86_64:latest
+> podman run --rm -it --name must_gather_singleton-spoke-1 -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must_gather_singleton.x86_64:latest
 
 Supported OCP versions:
 - 4.16
@@ -50,19 +50,19 @@ Data outputs:
 
 To run the container and wait for completion
 
-> podman run --rm -d --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION
+> podman run --rm -d --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION
 
 To run the container and return to the command line
 
-> podman run --rm -d --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION
+> podman run --rm -d --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION
 
 The progress can be monitored with the podman logs command
 
-> podman logs -f must-gather-singleton-x
+> podman logs -f must_gather_singleton-x
 
 To run the container based must gather script interactivly:
 
-> podman run --rm -it --name must-gather-singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+> podman run --rm -it --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
 
 ## Debug output.
 
@@ -70,7 +70,7 @@ The container supports printing extra deubg output. The interactive script suppo
 
 Example: 
 
-> podman run --rm -it --name must-gather-singleton-x --env DEBUG="" -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must-gather-singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+> podman run --rm -it --name must_gather_singleton-x --env DEBUG="" -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
 
 
 ## Functionality
