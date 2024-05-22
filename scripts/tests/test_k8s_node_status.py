@@ -1,12 +1,11 @@
 # tests/test_k8s_node_status.py
 
 from unittest.mock import patch, MagicMock
-import pytest  # pylint: disable=import-error
 from k8s_node_status import get_node_status
 
-@patch('k8s_node_status.client.CoreV1Api')
 @patch('k8s_node_status.config.load_kube_config')
-def test_get_node_status(mock_core_v1_api):
+@patch('k8s_node_status.client.CoreV1Api')
+def test_get_node_status(mock_core_v1_api, mock_load_kube_config):
   # Mock the Kubernetes API response
   mock_node_1 = MagicMock()
   mock_node_1.metadata.name = 'node1'
