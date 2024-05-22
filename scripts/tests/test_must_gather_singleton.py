@@ -53,10 +53,13 @@ def test_create_tar(directory_path, tarfile_name):
 
 def test_operator_info():
     input_string = "lvms-operator.v4.12"
-    assert operator_info(input_string) == {'operator_name': 'lvms-operator', 'operator_version': '4.14'}
+    assert operator_info(input_string) == {'operator_name': 'lvms-operator', 
+                                           'operator_version': '4.14'}
 
 def test_get_must_gather_url():
-    info = {'operator_name': 'lvms-operator', 'operator_major_version': '4.14', 'operator_version': '4.14.2'}
+    info = {'operator_name': 'lvms-operator', 
+            'operator_major_version': '4.14', 
+            'operator_version': '4.14.2'}
     assert get_must_gather_url(info) == 'registry.redhat.io/lvms4/lvms-must-gather-rhel9:v4.14'
 
 def test_invoke_must_gather():
