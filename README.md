@@ -50,7 +50,7 @@ Data outputs:
 
 To run the container and wait for completion
 
-> podman run --rm -d --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION
+> podman run --rm --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:VERSION
 
 To run the container and return to the command line
 
@@ -62,15 +62,27 @@ The progress can be monitored with the podman logs command
 
 To run the container based must gather script interactivly:
 
-> podman run --rm -it --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+> podman run --rm -it --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version /bin/bash
 
-## Debug output.
+> [root@aaaabbbbccc /]# /opt/must-gather-singleton.py -h
+
+
+## Debug output
 
 The container supports printing extra deubg output. The interactive script supports the `--debug` command line argument. The container and script also support passing `DEBUG=""` as an environment variable. 
 
 Example: 
 
-> podman run --rm -it --name must_gather_singleton-x --env DEBUG="" -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+> podman run --rm --name must_gather_singleton-x --env DEBUG="" -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version
+
+## Node status
+
+A support script is included to print the Ready/NotReady status of nodes. This script also supports debug output. 
+
+Example
+
+> podman run --rm --name must_gather_singleton-x -v /path/to/target/kubeconfig:/root/.kube/config:z -v /tmp/apps/must_gather_singleton/spoke-1/:/apps/must-gather/:z quay.io/namespace/must-gather:version python3 /opt/scripts/k8s_node_status.py
+
 
 
 ## Functionality
