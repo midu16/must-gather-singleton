@@ -483,7 +483,7 @@ def main():
       operator['operator_major_version'] = operator['operator_version'].rsplit('.', 1)[0]
       # print(operator)
       # print(operator['operator_major_version'])
-      mirror_must_gather.append(get_must_gather_url(info = operator))
+      mirror_must_gather.append(f"--image={get_must_gather_url(info = operator)}")
       output_list = [item for item in mirror_must_gather if item != '']
       # print(f"Namespace: {csv['csv_namespace']}")
       # print("Related Images:")
