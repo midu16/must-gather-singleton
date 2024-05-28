@@ -400,7 +400,7 @@ def invoke_must_gather(output_list = None, bundle_must_gather = None, debug = Fa
         print("Using the OCP default must gather")
       # If both output_list and bundle_must_gather are empty, invoke with default parameters.
       # This ensures that all the available means of collections are performed.
-      oc.invoke('adm', ['must-gather', '--', 
+      oc.invoke('adm', ['must-gather', '--',
               '--node-name=' + node_name,
               '/usr/bin/gather && /usr/bin/gather_audit_logs',
               '--image-stream=openshift/must-gather'])
