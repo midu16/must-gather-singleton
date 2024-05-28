@@ -21,4 +21,6 @@ jobs:
     - name: Tag the container-base-image
       run: podman tag ${{ env.IMAGE_TAG }} quay.io/midu/${{ env.IMAGE_TAG }}
     - name: List the images
-      run: podman images 
+      run: podman images
+    - name: Push the container-base-image to quay.io
+      run: podman push quay.io/midu/${{ env.IMAGE_TAG }}
