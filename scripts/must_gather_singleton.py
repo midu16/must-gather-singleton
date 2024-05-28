@@ -389,8 +389,6 @@ def invoke_must_gather(output_list = None, bundle_must_gather = None, debug = Fa
       print(f"Ready nodes: {ready_nodes}")
       print(f"Not ready nodes: {not_ready_nodes}")
 
-    if not ready_nodes:
-      raise Exception("No nodes in Ready state available.")
     #Select first ready_node available
     node_name = ready_nodes[0]
 
