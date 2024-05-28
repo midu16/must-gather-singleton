@@ -17,8 +17,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the container-base-image
-      run: podman build . --file Containerfile --tag ${{IMAGE_TAG}}
+      run: podman build . --file Containerfile --tag ${{IMAGE_NAME}}
     - name: Tag the container-base-image
-      run: podman tag ${{IMAGE_TAG}} quay.io/midu/${{IMAGE_TAG}}
+      run: podman tag ${{IMAGE_NAME}} quay.io/midu/${{IMAGE_NAME}}
     - name: List the images
       run: podman images 
