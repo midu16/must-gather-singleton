@@ -24,3 +24,5 @@ jobs:
       run: podman images
     - name: Push the container-base-image to quay.io
       run: podman push quay.io/midu/${{ env.IMAGE_TAG }}
+    - name: Clean-up build on local environment
+      run: podman rmi --all --force
