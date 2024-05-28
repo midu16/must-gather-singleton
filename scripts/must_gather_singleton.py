@@ -13,6 +13,8 @@ import tarfile
 import re
 from kubernetes import client, config # pylint: disable=import-error
 import openshift_client as oc # pylint: disable=import-error
+import k8s_node_status  # Import the module with node status functions
+
 
 ARGS = None
 
@@ -380,6 +382,17 @@ def invoke_must_gather(output_list = None, bundle_must_gather = None, debug = Fa
     print("invoke_must_gather called")
 
   try:
+    #Get the OCP Cluster nodes status
+    ready_nodes, not_ready_nodes = k8s_node_status.get_node_status()
+    if debug:
+        print(f"Ready nodes: {ready_nodes}")
+        print(f"Not ready nodes: {not_ready_nodes}")
+
+    if not ready_nodes:
+        raise Exception("No nodes in Ready state available.")
+    #Select first ready_node available
+    node_name = ready_nodes[0]
+
     #Note: openshift_client.invoke() uses the OS installed oc command.
     #Ref: https://github.com/openshift/openshift-client-python?tab=readme-ov-file#something-missing
     if not output_list and not bundle_must_gather:
