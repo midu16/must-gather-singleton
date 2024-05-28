@@ -14,7 +14,7 @@ import re
 from kubernetes import client, config # pylint: disable=import-error
 import openshift_client as oc # pylint: disable=import-error
 # Import the module with node status functions
-import k8s_node_status # pylint: disable=import-error 
+import k8s_node_status # pylint: disable=import-error
 
 
 ARGS = None
