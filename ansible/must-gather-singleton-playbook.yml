@@ -14,7 +14,7 @@
 
       - name: must-gather-singleton-2
         image: quay.io/midu/must-gather-singleton:latest
-        kubeconfig_volume_src: /root/.kcli/spoke-1/hub/auth/kubeconfig
+        kubeconfig_volume_src: /root/.kcli/spoke-2/hub/auth/kubeconfig
         kubeconfig_container_dest: /apps/root/.kube/config
         volume_src: /apps/must-gather-singleton/spoke-2/
         container_dest: /apps/must-gather/
