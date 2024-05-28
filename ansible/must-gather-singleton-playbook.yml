@@ -6,12 +6,16 @@
     # Define your containers with their unique properties
     containers:
       - name: must-gather-singleton-1
-        image: quay.io/midu/must-gather-singleton.x86_64@sha256:4671fa28d2a1726ccb17473a107e71958758e9fda6926a7bc16d85a7137dd02b
-        volume_src: /apps/must-gather-singleton/spoke-1/
+        image: quay.io/midu/must-gather-singleton:latest
+        kubeconfig_volume_src: /root/.kcli/spoke-1/hub/auth/kubeconfig
+        kubeconfig_container_dest: /apps/root/.kube/config
+        volume_src: /tmp/apps/must_gather_singleton/spoke-1/
         container_dest: /apps/must-gather/
 
       - name: must-gather-singleton-2
-        image: quay.io/midu/must-gather-singleton.x86_64@sha256:4671fa28d2a1726ccb17473a107e71958758e9fda6926a7bc16d85a7137dd02b
+        image: quay.io/midu/must-gather-singleton:latest
+        kubeconfig_volume_src: /root/.kcli/spoke-1/hub/auth/kubeconfig
+        kubeconfig_container_dest: /apps/root/.kube/config
         volume_src: /apps/must-gather-singleton/spoke-2/
         container_dest: /apps/must-gather/
 
@@ -27,9 +31,11 @@
         image: "{{ item.image }}"
         state: started
         volumes:
+          - "{{ item.kubeconfig_volume_src }}:{{ item.kubeconfig_container_dest }}"
           - "{{ item.volume_src }}:{{ item.container_dest }}"
         env:
           KUBECONFIG: "/apps/must-gather/kubeconfig"
+          DEBUG: ""
       loop: "{{ containers }}"
       loop_control:
         loop_var: item
