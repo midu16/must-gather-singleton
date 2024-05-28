@@ -385,11 +385,11 @@ def invoke_must_gather(output_list = None, bundle_must_gather = None, debug = Fa
     #Get the OCP Cluster nodes status
     ready_nodes, not_ready_nodes = k8s_node_status.get_node_status()
     if debug:
-        print(f"Ready nodes: {ready_nodes}")
-        print(f"Not ready nodes: {not_ready_nodes}")
+      print(f"Ready nodes: {ready_nodes}")
+      print(f"Not ready nodes: {not_ready_nodes}")
 
     if not ready_nodes:
-        raise Exception("No nodes in Ready state available.")
+      raise Exception("No nodes in Ready state available.")
     #Select first ready_node available
     node_name = ready_nodes[0]
 
@@ -400,7 +400,8 @@ def invoke_must_gather(output_list = None, bundle_must_gather = None, debug = Fa
         print("Using the OCP default must gather")
       # If both output_list and bundle_must_gather are empty, invoke with default parameters.
       # This ensures that all the available means of collections are performed.
-      oc.invoke('adm', ['must-gather', '--',
+      oc.invoke('adm', ['must-gather', '--', 
+              '--node-name=' + node_name,
               '/usr/bin/gather && /usr/bin/gather_audit_logs',
               '--image-stream=openshift/must-gather'])
     else:
@@ -408,6 +409,7 @@ def invoke_must_gather(output_list = None, bundle_must_gather = None, debug = Fa
         print("Calling found must gather")
       # Otherwise, invoke with specified output_list and bundle_must_gather
       oc.invoke('adm', ['must-gather', '--',
+              '--node-name=' + node_name,
               '/usr/bin/gather && /usr/bin/gather_audit_logs',
               '--image-stream=openshift/must-gather',
               set(output_list),
