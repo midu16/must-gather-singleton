@@ -2,41 +2,88 @@
 - name: Run Podman must-gather-singleton
   hosts: localhost
   become: yes
+  gather_facts: false
   vars:
+    # Define your Non AWS S3 Storage variables
+    s3_endpoint_url: 'http://192.168.178.55:9001/'
+    s3_access_key: ''
+    s3_secret_key: ''
     # Define your containers with their unique properties
     containers:
       - name: must-gather-singleton-1
         image: quay.io/midu/must-gather-singleton:latest
-        kubeconfig_volume_src: /root/.kcli/spoke-1/hub/auth/kubeconfig
-        kubeconfig_container_dest: /apps/root/.kube/config
+        kubeconfig_volume_src: /tmp/.kcli/spoke-1/hub/auth/kubeconfig
+        kubeconfig_container_dest: /root/.kube/config
         volume_src: /tmp/apps/must_gather_singleton/spoke-1/
         container_dest: /apps/must-gather/
-
+        
       - name: must-gather-singleton-2
         image: quay.io/midu/must-gather-singleton:latest
-        kubeconfig_volume_src: /root/.kcli/spoke-2/hub/auth/kubeconfig
-        kubeconfig_container_dest: /apps/root/.kube/config
-        volume_src: /apps/must-gather-singleton/spoke-2/
+        kubeconfig_volume_src: /tmp/.kcli/spoke-2/hub/auth/kubeconfig
+        kubeconfig_container_dest: /root/.kube/config
+        volume_src: /tmp/apps/must_gather_singleton/spoke-2/
         container_dest: /apps/must-gather/
-
       # Add more container configurations as needed
   tasks:
     - name: Ensure podman is installed
       package:
         name: podman
         state: present
+    - name: Create directory if it doesn't exist
+      file:
+        path: "{{ item.volume_src }}"
+        state: directory
+        mode: '0755'  # Optional: Set the permissions for the directory
+      loop: "{{ containers }}"
+      loop_control:
+        loop_var: item
+
     - name: Start Podman must-gather-singleton container(s)
       containers.podman.podman_container:
         name: "{{ item.name }}"
         image: "{{ item.image }}"
         state: started
         volumes:
-          - "{{ item.kubeconfig_volume_src }}:{{ item.kubeconfig_container_dest }}"
-          - "{{ item.volume_src }}:{{ item.container_dest }}"
+          - "{{ item.kubeconfig_volume_src }}:{{ item.kubeconfig_container_dest }}:z"
+          - "{{ item.volume_src }}:{{ item.container_dest }}:z"
         env:
-          KUBECONFIG: "/apps/must-gather/kubeconfig"
           DEBUG: ""
+        remove: true
+        detach: false
       loop: "{{ containers }}"
       loop_control:
         loop_var: item
 
+    - name: Next task after container exits
+      debug:
+        msg: "The container has exited. Proceeding to the next task."
+
+    - name: Find /var/tmp files that starts with sos-collector
+      ansible.builtin.find:
+        paths: "{{ item.volume_src }}"
+        patterns: 'must-gather.local.*.tar.gz'
+      register: list_mustgather
+      loop: "{{ containers }}"
+      loop_control:
+        loop_var: item
+
+    - name: Display list_mustgather
+      ansible.builtin.debug:
+        var: list_mustgather.files
+
+    - name: Upload to Non AWS S3 Storage
+      amazon.aws.s3_object:
+        bucket: "must-gather-singleton"
+        object: "{{ item.path }}"
+        src: "{{ item.path }}"
+        mode: put
+        aws_access_key: "{{ s3_access_key }}"
+        aws_secret_key: "{{ s3_secret_key }}"
+        validate_certs: false
+        encrypt: false
+        rgw: true
+        permission: []
+        endpoint_url: "{{ s3_endpoint_url }}"
+      loop: "{{ list_mustgather.files }}"
+      loop_control:
+        label: "{{ item.path }}"
