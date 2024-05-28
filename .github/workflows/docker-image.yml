@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: container-base-image CI
 
 on:
   push:
@@ -14,5 +14,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: podman build . --file Containerfile --tag must-gather-singleton:$(date +%s)
+    - name: Set up environment variables
+      run: echo "IMAGE_TAG=must-gather-singleton:$(date +%s)" >> $GITHUB_ENV
+    - name: Build the container-base-image
+      run: podman build . --file Containerfile --tag ${{ env.IMAGE_TAG }}
+    - name: Tag the container-base-image
+      run: podman tag ${{ env.IMAGE_TAG }} quay.io/midu/${{ env.IMAGE_TAG }}
+    - name: List the images
+      run: podman images
+    - name: Push the container-base-image to quay.io
+      run: podman push quay.io/midu/${{ env.IMAGE_TAG }}
+    - name: Clean-up build on local environment
+      run: podman rmi --all --force

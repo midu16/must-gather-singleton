@@ -35,7 +35,7 @@ confidence=
 # "--disable=all --enable=similarities". If you want to run only the classes
 # checker, but have no Warning level messages displayed, use
 # "--disable=all --enable=classes --disable=W"
-disable=C0114, C0115, C0116  # Example: disable missing docstrings warnings
+disable=C0114, C0115, C0116, W0718, W0603, R0914, R0912, E0015 # Example: disable missing docstrings warnings
 
 [REPORTS]
 # Set the output format. Available formats are text, parseable, colorized,
@@ -94,3 +94,6 @@ additional-builtins=
 
 # Tells whether we should check for unused import in __init__ files.
 init-import=no
+
+#set indent to 2 spaces
+indent-string="  "

@@ -4,3 +4,5 @@
 openshift
 openshift-client
 kubernetes
+pytest
+pytest-mock
