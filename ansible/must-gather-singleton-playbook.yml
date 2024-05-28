@@ -5,7 +5,7 @@
   gather_facts: false
   vars:
     # Define your Non AWS S3 Storage variables
-    s3_endpoint_url: 'http://192.168.178.55:9001/'
+    s3_endpoint_url: 'http://192.168.178.55:9000/'
     s3_access_key: ''
     s3_secret_key: ''
     # Define your containers with their unique properties
