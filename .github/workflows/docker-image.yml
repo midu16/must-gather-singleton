@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: container-base-image CI
 
 on:
   push:
@@ -14,5 +14,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
+    - name: Build the container-base-image
       run: podman build . --file Containerfile --tag must-gather-singleton:$(date +%s)
+    - name: Tag the container-base-image
+      run: podman tag must-gather-singleton:$(date +%s) quay.io/midu/must-gather-singleton:$(date +%s)
+    - name: List the images
+      run: podman images 
