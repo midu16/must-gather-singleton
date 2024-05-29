@@ -58,7 +58,7 @@
       debug:
         msg: "The container has exited. Proceeding to the next task."
 
-    - name: Find /var/tmp files that starts with sos-collector
+    - name: Find /var/tmp files that starts with must-gather.local
       ansible.builtin.find:
         paths: "{{ item.volume_src }}"
         patterns: 'must-gather.local.*.tar.gz'
