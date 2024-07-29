@@ -1,0 +1,166 @@
+---
+- name: Run Podman gather node SOS
+  hosts: localhost
+  become: false
+  gather_facts: false
+  vars:
+    # Setting debug to true will enable extra printing of information
+    # debug: true
+    # Setting run_toolbox to false will disable running the sos toolbox. 
+    # This useful for gathering pre-collected SOS information from the nodes
+    # run_toolbox: false
+    # Setting delete_old to false will not delete the previous sos data
+    # delete_old: false
+    # kube_config_path: /home/colonwq/.kube/config
+    kube_config_path: /home/redhat/kubeconfigs/ptnr2/kubeconfig
+    minikube_config_path: /home/colonwq/.minikube/
+    # output_data_dir: /home/colonwq/git/must-gather-singleton
+    output_data_dir: /home/redhat/kschinck
+    image_name: quay.io/kschinck/must-gather:2024-07-16-01
+    # cluster_type: minikube
+    cluster_type: ocp
+    # sosreport_case: SUPPORT_CASE_NUMBER
+    sosreport_args:
+      - --batch
+      - -a
+      - --verify
+      - -k crio.all=on
+      - -k crio.logs=on
+      - -k podman.all=on
+      - -k podman.logs=on
+      - --all-logs
+
+  tasks:
+    - name: Log in and get nodes
+      ansible.builtin.command:
+        cmd: >
+          podman run -it
+          {% if cluster_type == 'minikube' %}
+          -v {{ minikube_config_path }}:/home/colonwq/.minikube:z
+          {% endif %}
+          -v {{ kube_config_path }}:/root/.kube/config:z
+          -v {{ output_data_dir }}:/apps/must-gather:z
+          {{ image_name }}
+          oc get node -o=custom-columns=NODE:.metadata.name --no-headers
+      register: node_names
+      changed_when: false
+
+    - name: Print node names
+      ansible.builtin.debug:
+        msg: "Node Name: {{ item }}"
+      loop: "{{ node_names.stdout_lines }}"
+      when:
+        - debug | default(false) | bool
+
+    - name: Remove old toolbox container
+      ansible.builtin.command:
+        cmd: >
+          podman run -it
+          -v {{ kube_config_path }}:/root/.kube/config:z
+          -v {{ output_data_dir }}:/apps/must-gather:z {{ image_name }}
+          oc debug node/{{ item }} -- chroot /host podman rm toolbox-root
+      loop: "{{ node_names.stdout_lines }}"
+      ignore_errors: true
+      when:
+        - cluster_type == 'ocp'
+        - run_toolbox | default(true) | bool
+
+    - name: Delete old sos reports
+      ansible.builtin.command:
+        cmd: >
+          podman run -it
+          -v {{ kube_config_path }}:/root/.kube/config:z
+          -v {{ output_data_dir }}:/apps/must-gather:z
+          {{ image_name }}
+          oc debug node/{{ item }} -- find /host/var/tmp -type f -name sos* -delete
+      loop: "{{ node_names.stdout_lines }}"
+      when:
+        - cluster_type == 'ocp'
+        - delete_old | default(true) | bool
+
+    - name: Run toolbox on host
+      ansible.builtin.expect:
+        command: >
+          podman run -it
+          -v {{ kube_config_path }}:/root/.kube/config:z
+          -v {{ output_data_dir }}:/apps/must-gather:z
+          {{ image_name }}
+          oc debug node/{{ item }}
+        timeout: 1800
+        responses:
+          'sh-5.1#': 'chroot /host toolbox ; exit'
+          '.* /]#': >
+            sos report {% for arg in sosreport_args %} {{ arg }} {% endfor %}
+            --case-id={% if sosreport_case is defined %}{{ sosreport_case }}{% else %}NONE{% endif %};
+            exit
+          '^.*Would you like to pull it.*$': 'y'
+      loop: "{{ node_names.stdout_lines }}"
+      when:
+        - cluster_type == 'ocp'
+        - run_toolbox | default(true) | bool
+
+    - name: Collect sosreport names
+      ansible.builtin.command:
+        cmd: >
+          podman run -it
+          {% if cluster_type == 'minikube' %}
+          -v {{ minikube_config_path }}:/home/colonwq/.minikube:z
+          {% endif %}
+          -v {{ kube_config_path }}:/root/.kube/config:z
+          -v {{ output_data_dir }}:/apps/must-gather:z {{ image_name }}
+          {% if cluster_type == 'minikube' %}
+          kubectl debug node/{{ item }} --image=fedora -it
+          {% else %}
+          oc debug node/{{ item }}
+          {% endif %}
+          -- find /host/var/tmp/ -type f -name sos*
+      loop: "{{ node_names.stdout_lines }}"
+      register: filenames
+
+    - name: Print collect file names
+      ansible.builtin.debug:
+        msg: "stdout_lines: {{ item.stdout_lines }}"
+      loop: "{{ filenames.results }}"
+      when:
+        - debug | default(false) | bool
+
+    - name: Copy sha256 files
+      ansible.builtin.command:
+        cmd: >
+          podman run -it
+          {% if cluster_type == 'minikube' %}
+          -v {{ minikube_config_path }}:/home/colonwq/.minikube:z
+          {% endif %}
+          -v {{ kube_config_path }}:/root/.kube/config:z
+          -v {{ output_data_dir }}:/apps/must-gather:z
+          {{ image_name }}
+          /opt/copy_from_node.sh {{ cluster_type }} {{ item.item }}
+          {% if cluster_type == 'minikube' %}
+          {{ item.stdout_lines[-1] }}
+          {% else %}
+          {{ item.stdout_lines[-3] }}
+          {% endif %}
+      ignore_errors: true
+      loop: "{{ filenames.results }}"
+
+    - name: Copy tar.xz files
+      ansible.builtin.command:
+        cmd: >
+          podman run -it
+          {% if cluster_type == 'minikube' %}
+          -v {{ minikube_config_path }}:/home/colonwq/.minikube:z
+          {% endif %}
+          -v {{ kube_config_path }}:/root/.kube/config:z
+          -v {{ output_data_dir }}:/apps/must-gather:z
+          {{ image_name }}
+          /opt/copy_from_node.sh {{ cluster_type }} {{ item.item }}
+          {% if cluster_type == 'minikube' %}
+          {{ item.stdout_lines[-3] }}
+          {% else %}
+          {{ item.stdout_lines[-4] }}
+          {% endif %}
+      ignore_errors: true
+      loop: "{{ filenames.results }}"
+
+#    - name: End the play
+#      ansible.builtin.meta: end_play
